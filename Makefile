@@ -27,7 +27,9 @@ typecheck: ## Mypy strict
 
 security: ## Bandit + pip-audit
 	$(BIN)/bandit -c pyproject.toml -r src
-	$(BIN)/pip-audit --skip-editable
+	$(BIN)/pip freeze --exclude-editable > .audit-requirements.txt
+	$(BIN)/pip-audit --strict -r .audit-requirements.txt
+	rm -f .audit-requirements.txt
 
 test: ## Pytest with coverage gate
 	$(BIN)/pytest

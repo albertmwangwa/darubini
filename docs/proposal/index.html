@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Darubini Proposal</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single centred column (max 1040px) of shadcn-style sections; one blue accent, neutral slate cards. */
+:root {
+  --bg: hsl(220 33% 99%);
+  --card: hsl(0 0% 100%);
+  --fg: hsl(222 47% 11%);
+  --muted: hsl(220 20% 96%);
+  --muted-fg: hsl(218 13% 42%);
+  --border: hsl(220 16% 89%);
+  --primary: hsl(221 83% 53%);
+  --primary-fg: hsl(0 0% 100%);
+  --primary-soft: hsl(221 90% 96%);
+  --primary-ink: hsl(224 76% 40%);
+  --stain: hsl(268 45% 42%);
+  --plasma: hsl(340 45% 92%);
+  --good: hsl(152 60% 36%);
+  --warn: hsl(32 90% 44%);
+  --radius: 12px;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --shadow: 0 1px 2px hsl(222 47% 11% / 0.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: hsl(224 32% 7%); --card: hsl(224 28% 10%); --fg: hsl(214 32% 94%);
+    --muted: hsl(223 24% 15%); --muted-fg: hsl(217 15% 66%); --border: hsl(223 20% 20%);
+    --primary: hsl(217 91% 62%); --primary-fg: hsl(224 40% 8%); --primary-soft: hsl(222 50% 18%);
+    --primary-ink: hsl(213 94% 76%); --stain: hsl(268 60% 72%); --plasma: hsl(340 20% 22%);
+    --good: hsl(152 55% 52%); --warn: hsl(36 92% 58%); --shadow: none; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: hsl(224 32% 7%); --card: hsl(224 28% 10%); --fg: hsl(214 32% 94%);
+  --muted: hsl(223 24% 15%); --muted-fg: hsl(217 15% 66%); --border: hsl(223 20% 20%);
+  --primary: hsl(217 91% 62%); --primary-fg: hsl(224 40% 8%); --primary-soft: hsl(222 50% 18%);
+  --primary-ink: hsl(213 94% 76%); --stain: hsl(268 60% 72%); --plasma: hsl(340 20% 22%);
+  --good: hsl(152 55% 52%); --warn: hsl(36 92% 58%); --shadow: none; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-sans);
+  font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 40px 72px; display: grid; gap: 56px; }
+h1, h2, h3 { margin: 0; line-height: 1.2; text-wrap: balance; letter-spacing: -0.02em; }
+h1 { font-size: clamp(2.4rem, 6vw, 3.6rem); font-weight: 800; letter-spacing: -0.035em; }
+h2 { font-size: 1.6rem; font-weight: 700; }
+h3 { font-size: 1.02rem; font-weight: 650; letter-spacing: -0.01em; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--primary-ink); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px; }
+.muted { color: var(--muted-fg); }
+.eyebrow { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary-ink); }
+.mono { font-family: var(--font-mono); font-size: 0.85em; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* shadcn-style primitives */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+.badge { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--border); font-size: 0.75rem; font-weight: 600; background: var(--card); white-space: nowrap; }
+.badge.primary { background: var(--primary); color: var(--primary-fg); border-color: transparent; }
+.badge.soft { background: var(--primary-soft); color: var(--primary-ink); border-color: transparent; }
+.btn { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; text-decoration: none; border: 1px solid var(--border); background: var(--card); color: var(--fg); }
+.btn.primary { background: var(--primary); color: var(--primary-fg); border-color: transparent; }
+.btn:hover { filter: brightness(0.97); }
+.section { display: grid; gap: 20px; }
+.section > header { display: grid; gap: 8px; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 32px; align-items: center; }
+.hero-copy { display: grid; gap: 18px; min-width: 0; }
+.hero-copy .lede { font-size: 1.12rem; color: var(--muted-fg); }
+.badges, .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.field { padding: 16px; display: grid; gap: 12px; }
+.field svg { width: 100%; height: auto; display: block; border-radius: 999px; }
+.tally { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tally div { background: var(--muted); border-radius: 8px; padding: 8px 10px; display: grid; }
+.tally b { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.tally span { font-size: 0.72rem; color: var(--muted-fg); }
+
+/* stats */
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.stat { padding: 20px; display: grid; gap: 6px; }
+.stat b { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+
+/* steps */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; counter-reset: s; }
+.steps li { padding: 16px; display: grid; gap: 6px; align-content: start; counter-increment: s; min-width: 0; }
+.steps li::before { content: counter(s); width: 26px; height: 26px; border-radius: 999px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary-ink); font-weight: 700; font-size: 0.8rem; }
+.steps p { font-size: 0.86rem; color: var(--muted-fg); }
+
+/* tables */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { text-align: left; padding: 12px 16px; vertical-align: top; border-bottom: 1px solid var(--border); }
+th { font-size: 0.75rem; font-weight: 600; color: var(--muted-fg); text-transform: uppercase; letter-spacing: 0.05em; background: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td.tool { font-weight: 650; white-space: nowrap; }
+.tz { color: var(--primary-ink); font-weight: 650; }
+
+/* rubric */
+.rubric { padding: 20px; display: grid; gap: 16px; }
+.bar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; gap: 2px; }
+.bar span { display: block; }
+.rubric-rows { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.rubric-rows div { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.rubric-rows b { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.rubric-rows h3 { display: flex; align-items: center; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.rubric-rows p { font-size: 0.86rem; color: var(--muted-fg); }
+
+/* timeline */
+.timeline { padding: 8px 0; }
+.tl { list-style: none; margin: 0; padding: 0; }
+.tl li { display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: 16px; padding: 12px 20px; border-bottom: 1px solid var(--border); align-items: baseline; }
+.tl li:last-child { border-bottom: 0; }
+.tl .date { font-size: 0.82rem; color: var(--muted-fg); font-variant-numeric: tabular-nums; }
+.tl .what { min-width: 0; }
+.tl .what p { font-size: 0.86rem; color: var(--muted-fg); }
+.tl li.key { background: var(--primary-soft); }
+.tl li.key .date { color: var(--primary-ink); font-weight: 600; }
+
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.pad { padding: 20px; display: grid; gap: 10px; align-content: start; }
+ul.clean { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.note { border-left: 3px solid var(--warn); padding: 12px 16px; background: var(--muted); border-radius: 0 8px 8px 0; font-size: 0.9rem; }
+footer.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 0.85rem; color: var(--muted-fg); border-top: 1px solid var(--border); padding-top: 20px; }
+
+@media (max-width: 900px) {
+  .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .rubric-rows { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .hero, .grid2 { grid-template-columns: minmax(0, 1fr); }
+  .stats { grid-template-columns: minmax(0, 1fr); }
+  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tl li { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pulse { animation: pulse 2.4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+  @keyframes pulse { 50% { opacity: 0.45; } }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="badges">
+        <span class="badge primary">Indie Developer track</span>
+        <span class="badge soft">Meta Global AI Developer Hackathon 2026</span>
+      </div>
+      <h1>Darubini</h1>
+      <p class="lede">A malaria microscopy copilot. A phone on the eyepiece, SAM 3 finds every parasite and white blood cell, the count follows the WHO thick-film rule, and the report arrives in Kiswahili or English for the microscopist to confirm.</p>
+      <div class="actions">
+        <a class="btn primary" href="https://github.com/albertmwangwa/darubini">View the repository</a>
+        <a class="btn" href="https://github.com/albertmwangwa/darubini/blob/main/docs/IMPLEMENTATION_PLAN.md">Implementation plan</a>
+      </div>
+      <p class="muted" style="font-size:0.85rem">Albert William Mwangwa · MSc Data Science, University of Dar es Salaam · Dar es Salaam, Tanzania</p>
+    </div>
+
+    <figure class="card field" style="margin:0" aria-label="Illustration of a thick smear field with detected parasites and white blood cells">
+      <svg viewBox="0 0 240 240" role="img" aria-label="Microscope field with detections">
+        <circle cx="120" cy="120" r="120" fill="var(--plasma)"/>
+        <g fill="var(--stain)" opacity="0.85">
+          <circle cx="70" cy="80" r="15"/><circle cx="168" cy="150" r="17"/><circle cx="110" cy="182" r="14"/>
+        </g>
+        <g fill="none" stroke="var(--muted-fg)" stroke-width="1.5" stroke-dasharray="3 3">
+          <rect x="50" y="60" width="40" height="40" rx="6"/><rect x="146" y="128" width="44" height="44" rx="6"/><rect x="91" y="163" width="38" height="38" rx="6"/>
+        </g>
+        <g fill="var(--stain)">
+          <circle cx="132" cy="70" r="3.5"/><circle cx="90" cy="128" r="3"/><circle cx="150" cy="104" r="3.5"/><circle cx="58" cy="150" r="3"/><circle cx="186" cy="88" r="3"/>
+        </g>
+        <g class="pulse" fill="none" stroke="var(--primary)" stroke-width="2">
+          <rect x="124" y="62" width="16" height="16" rx="4"/><rect x="82" y="120" width="16" height="16" rx="4"/><rect x="142" y="96" width="16" height="16" rx="4"/><rect x="50" y="142" width="16" height="16" rx="4"/><rect x="178" y="80" width="16" height="16" rx="4"/>
+        </g>
+      </svg>
+      <div class="tally">
+        <div><b>31</b><span>parasites</span></div>
+        <div><b>206</b><span>WBC</span></div>
+        <div><b>1,204</b><span>parasites/µL</span></div>
+      </div>
+      <figcaption class="muted" style="font-size:0.75rem">Illustration. Blue boxes: parasites. Dashed: white blood cells. 31 × 8,000 ÷ 206 ≈ 1,204/µL.</figcaption>
+    </figure>
+  </section>
+
+  <section class="section">
+    <header>
+      <span class="eyebrow">The problem</span>
+      <h2>Counting parasites is slow, skilled work, and the burden is heaviest here</h2>
+    </header>
+    <div class="stats">
+      <div class="card stat"><b class="num">282M</b><span class="muted">estimated malaria cases worldwide in 2024</span></div>
+      <div class="card stat"><b class="num">610,000</b><span class="muted">estimated malaria deaths in 2024; 11 African countries carry about two-thirds</span></div>
+      <div class="card stat"><b class="num">4.3%</b><span class="muted">of global malaria deaths were in Tanzania, fourth highest worldwide</span></div>
+    </div>
+    <p class="muted">Light microscopy of Giemsa-stained thick films is the reference method for confirming malaria and measuring parasite density. Microscopists count parasites against 200 to 500 white blood cells, field by field. It is tiring, and accuracy drops with fatigue, stain quality and smear thickness. Sources: <a href="https://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2025">WHO World Malaria Report 2025</a>; <a href="https://www.thecitizen.co.tz/tanzania/news/national/tanzania-among-four-countries-with-highest-malaria-deaths-globally-5433286">The Citizen</a>.</p>
+  </section>
+
+  <section class="section">
+    <header>
+      <span class="eyebrow">The solution</span>
+      <h2>Six steps from eyepiece to confirmed count</h2>
+    </header>
+    <ol class="steps">
+      <li class="card"><h3>Capture</h3><p>Phone on the eyepiece photographs one field at a time.</p></li>
+      <li class="card"><h3>Quality gate</h3><p>Focus, exposure and stain checks reject bad fields.</p></li>
+      <li class="card"><h3>Segment</h3><p>SAM 3 finds parasites and WBC from concept and exemplar prompts.</p></li>
+      <li class="card"><h3>Count</h3><p>WHO rule: 200 WBC, extend to 500 if few parasites.</p></li>
+      <li class="card"><h3>Report</h3><p>Muse Spark reviews quality and writes in Kiswahili or English.</p></li>
+      <li class="card"><h3>Confirm</h3><p>The microscopist checks flagged fields and signs off.</p></li>
+    </ol>
+  </section>
+
+  <section class="section">
+    <header>
+      <span class="eyebrow">Meta AI tooling</span>
+      <h2>Going well past a single API call</h2>
+    </header>
+    <div class="card table-wrap">
+      <table>
+        <thead><tr><th>Tool</th><th>Role</th><th>The creative part</th></tr></thead>
+        <tbody>
+          <tr><td class="tool">SAM 3</td><td>Segments parasites and WBC nuclei from text concepts</td><td>3 to 5 confirmed parasites become visual exemplars that adapt it to each lab's stain without retraining; video tracking stops one parasite being counted twice as the slide moves</td></tr>
+          <tr><td class="tool">Muse Spark</td><td>Quality second reader and bilingual report writer</td><td>A tool-calling agent that drives the count, decides when the stopping rule is met and explains disagreements; it never changes a number</td></tr>
+          <tr><td class="tool">Open weights</td><td>Offline Kiswahili report drafting</td><td>Runs through partner inference today; the path to clinics with unreliable internet</td></tr>
+          <tr><td class="tool">Muse Code</td><td>Build partner</td><td>Test scaffolds and evaluation scripts</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <header>
+      <span class="eyebrow">Data</span>
+      <h2>Trained abroad, tested on Tanzanian slides</h2>
+      <p class="muted">All public. Split by patient. The two Tanzanian sets are held out for testing and never used for tuning.</p>
+    </header>
+    <div class="card table-wrap">
+      <table>
+        <thead><tr><th>Dataset</th><th>Origin</th><th>Labels</th><th class="num">Size</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://zenodo.org/records/4314960">UDOM thick smears</a></td><td class="tz">Tanzania, Morogoro</td><td>Boxes: parasites + WBC</td><td class="num">149 MB</td><td>Count benchmark (held out)</td></tr>
+          <tr><td><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11648091/">NM-AIST smears</a></td><td class="tz">Tanzania, Arusha</td><td>Image-level, 3,544 images</td><td class="num">GBs</td><td>Slide-level test (held out)</td></tr>
+          <tr><td><a href="https://data.lhncbc.nlm.nih.gov/public/Malaria/Thick_Smears_150/index.html">NLM thick, 150 patients</a></td><td>Bangladesh</td><td>Every parasite + WBC</td><td class="num">3.9 GB</td><td>Tuning and training</td></tr>
+          <tr><td><a href="https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThickBloodSmearsU/index.html">NLM thick, uninfected</a></td><td>Bangladesh</td><td>WBC; negatives</td><td class="num">2.5 GB</td><td>Specificity</td></tr>
+          <tr><td><a href="https://data.lhncbc.nlm.nih.gov/public/Malaria/MalariaScreener/index.html">NLM Sudan</a></td><td>Sudan</td><td>Expert counts, 190 patients</td><td class="num">49 GB</td><td>African validation (optional)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <header>
+      <span class="eyebrow">Built for the rubric</span>
+      <h2>How Darubini earns each point</h2>
+    </header>
+    <div class="card rubric">
+      <div class="bar" role="img" aria-label="Judging weights: Impact 30%, Meta tooling 25%, Demo 25%, Technical depth 20%">
+        <span style="flex:30;background:var(--primary)"></span>
+        <span style="flex:25;background:var(--stain)"></span>
+        <span style="flex:25;background:var(--good)"></span>
+        <span style="flex:20;background:var(--warn)"></span>
+      </div>
+      <div class="rubric-rows">
+        <div><b>30%</b><h3><span class="dot" style="background:var(--primary)"></span>Impact</h3><p>A leading killer in Tanzania, existing microscopes, a Kiswahili report, results on local slides.</p></div>
+        <div><b>25%</b><h3><span class="dot" style="background:var(--stain)"></span>Meta tooling</h3><p>Exemplar prompting, video tracking, and Muse Spark as a tool-calling agent.</p></div>
+        <div><b>25%</b><h3><span class="dot" style="background:var(--good)"></span>Demo</h3><p>Live on a real microscope in Dar es Salaam, beside a microscopist's manual count.</p></div>
+        <div><b>20%</b><h3><span class="dot" style="background:var(--warn)"></span>Technical depth</h3><p>Strict typing, 96% test coverage, security scans, patient-level splits, ablations.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <header>
+      <span class="eyebrow">Implementation plan</span>
+      <h2>Ten days, feature freeze on day 8</h2>
+      <p class="muted">All times East Africa Time. Submission closes Thursday 5 November at 05:00; the plan submits 11 hours early.</p>
+    </header>
+    <div class="card timeline">
+      <ol class="tl">
+        <li><span class="date">Sat 24 – Sun 25</span><div class="what"><h3>Ready before kickoff</h3><p>Repo and CI live; datasets downloaded; baseline numbers; microscope booked.</p></div><span class="badge">Done in part</span></li>
+        <li><span class="date">Mon 26 Oct</span><div class="what"><h3>Kickoff and API wiring</h3><p>Claim credits, connect the adapter, first SAM 3 masks on a real smear.</p></div><span class="badge">Day 1</span></li>
+        <li><span class="date">Tue 27 Oct</span><div class="what"><h3>SAM 3 at scale</h3><p>Cached batch runs and prompt variants on validation patients.</p></div><span class="badge">Day 2</span></li>
+        <li><span class="date">Wed 28 Oct</span><div class="what"><h3>Exemplar prompting</h3><p>Per-slide adaptation from a few confirmed parasites.</p></div><span class="badge">Day 3</span></li>
+        <li><span class="date">Thu 29 Oct</span><div class="what"><h3>Tanzanian evaluation</h3><p>Count error on UDOM; sensitivity and specificity on NM-AIST.</p></div><span class="badge">Day 4</span></li>
+        <li><span class="date">Fri 30 Oct</span><div class="what"><h3>Muse Spark agent</h3><p>Tool-calling count loop, quality review, bilingual report.</p></div><span class="badge">Day 5</span></li>
+        <li><span class="date">Sat 31 Oct</span><div class="what"><h3>Phone capture app</h3><p>Camera, mask overlay, running count, report screen.</p></div><span class="badge">Day 6</span></li>
+        <li><span class="date">Sun 1 Nov</span><div class="what"><h3>Video tracking and polish</h3><p>De-duplicate parasites across a panning video; offline fallback.</p></div><span class="badge">Day 7</span></li>
+        <li class="key"><span class="date">Mon 2 Nov</span><div class="what"><h3>Live lab session · feature freeze</h3><p>Real microscope, side-by-side with a manual count, B-roll filmed.</p></div><span class="badge primary">Day 8</span></li>
+        <li><span class="date">Tue 3 Nov</span><div class="what"><h3>Video and write-up</h3><p>3-minute video, results tables, model card, tag v1.0.0.</p></div><span class="badge">Day 9</span></li>
+        <li class="key"><span class="date">Wed 4 Nov</span><div class="what"><h3>Submit by 18:00</h3><p>Final checks and submission on the Cerebral Valley portal.</p></div><span class="badge primary">Day 10</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section">
+    <header>
+      <span class="eyebrow">Evaluation and safety</span>
+      <h2>Measured honestly, used responsibly</h2>
+    </header>
+    <div class="grid2">
+      <div class="card pad">
+        <h3>What we measure</h3>
+        <ul class="clean">
+          <li>Detection precision, recall and F1 for parasites and WBC</li>
+          <li>Count error, bias and correlation against expert labels</li>
+          <li>Slide sensitivity and specificity on Tanzanian slides</li>
+          <li>Ablations: baseline, SAM 3 text, SAM 3 with exemplars, plus Muse Spark QC</li>
+        </ul>
+      </div>
+      <div class="card pad">
+        <h3>How we keep it safe</h3>
+        <ul class="clean">
+          <li>Decision support only; a microscopist confirms every result</li>
+          <li>Numbers come from deterministic code, never from the language model</li>
+          <li>Unusable and doubtful fields are flagged, not hidden</li>
+          <li>Limits published in a model card; no patient identifiers stored</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">Density uses an assumed 8,000 WBC per microlitre, as in standard thick-film practice. Darubini has not been clinically validated.</p>
+  </section>
+
+  <section class="section">
+    <header>
+      <span class="eyebrow">Risks</span>
+      <h2>What could go wrong, and the plan for it</h2>
+    </header>
+    <div class="card table-wrap">
+      <table>
+        <thead><tr><th>Risk</th><th>Fallback</th></tr></thead>
+        <tbody>
+          <tr><td>SAM 3 misses tiny ring forms</td><td>Exemplar prompts, tiled crops, baseline candidates verified by SAM 3</td></tr>
+          <tr><td>US$150 of API credits runs out</td><td>Every response cached; ablations on a fixed 300-image subset; partner credits</td></tr>
+          <tr><td>API shape differs from assumptions</td><td>One adapter file changes; everything else is tested against mocks</td></tr>
+          <tr><td>Power or network cut in Dar es Salaam</td><td>UPS, mobile data, cloud workspace; demo video recorded by day 9</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span>Darubini · Kiswahili for a magnifying scope</span>
+    <span><a href="https://github.com/albertmwangwa/darubini">github.com/albertmwangwa/darubini</a> · MIT licence</span>
+  </footer>
+</div>
+</body>
+</html>

@@ -215,7 +215,7 @@ darubini/
 
 ## Roadmap
 
-The day-by-day hackathon plan is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md). In short:
+The day-by-day hackathon plan is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md); the proposal is in [`docs/proposal/`](docs/proposal/) as a web page and a PowerPoint deck. In short:
 
 - [x] Repository, CI quality gates, dataset manifest and downloader
 - [x] Counting engine, quality gate, baseline segmenter, bilingual report, API, CLI
