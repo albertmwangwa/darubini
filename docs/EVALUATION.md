@@ -15,7 +15,7 @@ Results will be filled in during the build. This page fixes the protocol **befor
 | --- | --- | --- |
 | `nih-thick-pf-150` | Prompt tuning, exemplar selection, detector head (if needed) | 70 / 15 / 15 **by patient** |
 | `nih-thick-uninfected` | Specificity, negative stopping rule | Same patient-level rule |
-| `udom-tz-thick` | **Held-out Tanzanian test.** No tuning on it. | Test only |
+| `udom-tz-thick` | **Held-out Tanzanian test.** No tuning on it. 5,453 tiles from 611 photos; report per photo as well as per tile. | Test only |
 | `nm-aist-tz` | Held-out slide-level test | Test only |
 
 ## Metrics
