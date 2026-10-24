@@ -25,7 +25,7 @@ concurrency:
 
 env:
   AUTHOR: albertmwangwa
-  MIN_PASSING: "4"
+  MIN_PASSING: "5"
   # The seven checks that count towards the vote, as GitHub names them.
   CHECKS: |
     Lint and type-check
