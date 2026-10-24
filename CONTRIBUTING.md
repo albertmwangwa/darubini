@@ -12,7 +12,7 @@ Never commit dataset images, API keys or `.env` files.
 
 ## Reviews and auto-merge
 
-- **Pull requests opened by `albertmwangwa`** merge themselves (squash) into `main` once all seven quality checks have finished and **at least 4 of the 7 passed**: lint and type-check, tests on Python 3.10, 3.11 and 3.12, security scans, Docker build and CodeQL. Configured in [`.github/workflows/auto-merge.yml`](.github/workflows/auto-merge.yml) (`AUTHOR`, `MIN_PASSING`).
-- **Pull requests opened by Claude Code** (description contains "Generated with Claude Code"), **Dependabot** or anyone else wait for a manual review.
+- **Pull requests opened under `albertmwangwa`**, by hand or by Claude Code, merge themselves (squash) into `main` once all seven quality checks have finished and **at least 4 of the 7 passed**: lint and type-check, tests on Python 3.10, 3.11 and 3.12, security scans, Docker build and CodeQL. Configured in [`.github/workflows/auto-merge.yml`](.github/workflows/auto-merge.yml) (`AUTHOR`, `MIN_PASSING`).
+- **Pull requests from Dependabot** or anyone else wait for a manual review.
 - Drafts, forks and pull requests that do not target `main` are never auto-merged.
 - Small direct changes can be committed straight to `main`; CI runs on every push.

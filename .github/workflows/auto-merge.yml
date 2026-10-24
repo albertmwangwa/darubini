@@ -3,10 +3,10 @@ name: Auto-merge
 # Merges a pull request into main once all seven quality checks have finished
 # and at least MIN_PASSING of them succeeded.
 #
-# Only pull requests opened by AUTHOR are auto-merged. Pull requests opened by
-# Claude Code (their description contains the "Generated with Claude Code" line),
-# by Dependabot or by anyone else wait for a manual review. It also skips
-# drafts, forks and pull requests that do not target main.
+# Only pull requests opened under the AUTHOR account are auto-merged, including
+# those Claude Code opens on that account. Pull requests from Dependabot or
+# anyone else wait for a manual review. It also skips drafts, forks and pull
+# requests that do not target main.
 
 on:
   workflow_run:
@@ -53,20 +53,17 @@ jobs:
           set -euo pipefail
 
           pr=$(gh api "repos/$REPO/pulls?state=open&head=${REPO%%/*}:$BRANCH" \
-                 --jq '.[0] // empty | {number, base: .base.ref, draft, sha: .head.sha, author: .user.login,
-                                       claude: ((.body // "") | test("Generated with \\[?Claude Code"))}')
+                 --jq '.[0] // empty | {number, base: .base.ref, draft, sha: .head.sha, author: .user.login}')
           if [ -z "$pr" ]; then echo "No open pull request for $BRANCH."; exit 0; fi
           number=$(jq -r .number <<<"$pr")
           base=$(jq -r .base <<<"$pr")
           draft=$(jq -r .draft <<<"$pr")
           head=$(jq -r .sha <<<"$pr")
           author=$(jq -r .author <<<"$pr")
-          claude=$(jq -r .claude <<<"$pr")
 
           if [ "$base" != "main" ]; then echo "PR #$number targets $base, not main."; exit 0; fi
           if [ "$draft" = "true" ]; then echo "PR #$number is a draft."; exit 0; fi
           if [ "$author" != "$AUTHOR" ]; then echo "PR #$number is by $author; leaving it for review."; exit 0; fi
-          if [ "$claude" = "true" ]; then echo "PR #$number was opened by Claude Code; leaving it for review."; exit 0; fi
           if [ "$head" != "$SHA" ]; then echo "PR #$number has newer commits; waiting for their checks."; exit 0; fi
 
           runs=$(gh api "repos/$REPO/commits/$SHA/check-runs?per_page=100" --jq '.check_runs')
