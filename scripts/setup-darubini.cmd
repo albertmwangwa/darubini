@@ -1,10 +1,19 @@
 @echo off
-rem Darubini: clone the repo into F:\Projects\darubini, set up Python, download datasets.
+rem Darubini: clone the repo, set up Python, download and profile the datasets.
+rem Works from either place:
+rem   - next to the repo (e.g. F:\Projects\setup-darubini.cmd -> F:\Projects\darubini)
+rem   - inside the repo  (darubini\scripts\setup-darubini.cmd)
 rem Safe to run again: finished steps and finished datasets are skipped.
 setlocal EnableExtensions
 title Darubini setup
-cd /d "%~dp0"
-set "ROOT=%~dp0"
+set "HERE=%~dp0"
+if exist "%HERE%..\.git" (
+  for %%I in ("%HERE%..") do set "REPO=%%~fI"
+) else (
+  set "REPO=%HERE%darubini"
+)
+for %%I in ("%REPO%\..") do set "ROOT=%%~fI\"
+cd /d "%ROOT%"
 set "LOG=%ROOT%darubini-setup.log"
 set "STATUS=%ROOT%darubini-datasets-status.txt"
 
@@ -48,18 +57,18 @@ echo [1/5] Git and Python found.
 echo [1/5] prerequisites ok >> "%LOG%"
 
 rem ---- 2. Clone or update the repository ----
-if exist "darubini\.git" (
+if exist "%REPO%\.git" (
   echo [2/5] Repository already here; pulling the latest changes...
-  git -C darubini pull --ff-only >> "%LOG%" 2>&1
+  git -C "%REPO%" pull --ff-only >> "%LOG%" 2>&1
 ) else (
   echo [2/5] Cloning github.com/albertmwangwa/darubini ...
-  git clone https://github.com/albertmwangwa/darubini.git darubini >> "%LOG%" 2>&1
+  git clone https://github.com/albertmwangwa/darubini.git "%REPO%" >> "%LOG%" 2>&1
   if errorlevel 1 (
     echo [ERROR] Clone failed. Check your internet connection; details in the log.
     goto :fail
   )
 )
-cd darubini
+cd /d "%REPO%"
 
 rem ---- 3. Python environment ----
 if not exist ".venv\Scripts\python.exe" (
@@ -79,7 +88,7 @@ if errorlevel 1 (
 )
 
 rem ---- 5. Datasets ----
-echo [5/5] Downloading datasets into F:\Projects\darubini\datasets\raw ...
+echo [5/5] Downloading datasets into %REPO%\datasets\raw ...
 echo       Tanzanian UDOM set first (149 MB), then NLM thick smears (6.4 GB),
 echo       NLM thin cells (353 MB) and MP-IDB. Interrupted? Just run this again.
 echo.
