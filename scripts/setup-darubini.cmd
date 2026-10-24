@@ -15,7 +15,12 @@ echo  ==============
 echo  Log file: %LOG%
 echo.
 
-rem ---- 1. Check prerequisites ----
+rem ---- 1. Check prerequisites (offer to install missing ones with winget) ----
+rem Pick up tools installed in this session without reopening the window.
+set "PATH=%PATH%;%ProgramFiles%\Git\cmd;%LocalAppData%\Programs\Python\Launcher;%LocalAppData%\Microsoft\WindowsApps"
+
+where git >nul 2>&1
+if errorlevel 1 call :install Git Git.Git
 where git >nul 2>&1
 if errorlevel 1 (
   echo [ERROR] Git is not installed. Get it from https://git-scm.com/download/win then run this again.
@@ -23,12 +28,10 @@ if errorlevel 1 (
   goto :fail
 )
 
-set "PY="
-where py >nul 2>&1
-if not errorlevel 1 set "PY=py -3"
+call :findpy
 if not defined PY (
-  where python >nul 2>&1
-  if not errorlevel 1 set "PY=python"
+  call :install "Python 3.12" Python.Python.3.12
+  call :findpy
 )
 if not defined PY (
   echo [ERROR] Python 3.10+ is not installed. Get it from https://www.python.org/downloads/ and tick "Add to PATH".
@@ -94,6 +97,34 @@ echo  nlm-sudan (read their licences first). See datasets\README.md.
 echo SETUP COMPLETE %date% %time% >> "%LOG%"
 echo.
 pause
+exit /b 0
+
+:findpy
+set "PY="
+where py >nul 2>&1
+if not errorlevel 1 (
+  py -3 -c "import sys" >nul 2>&1
+  if not errorlevel 1 set "PY=py -3"
+)
+if defined PY exit /b 0
+where python >nul 2>&1
+if errorlevel 1 exit /b 0
+python -c "import sys" >nul 2>&1
+if not errorlevel 1 set "PY=python"
+exit /b 0
+
+:install
+rem %1 = friendly name, %2 = winget package id. Asks before installing anything.
+where winget >nul 2>&1
+if errorlevel 1 exit /b 1
+echo.
+echo  %~1 is not installed.
+choice /c YN /m "  Install %~1 now with winget"
+if errorlevel 2 exit /b 1
+echo [setup] installing %~2 with winget >> "%LOG%"
+winget install --id %~2 -e --source winget --accept-package-agreements --accept-source-agreements
+if exist "%ProgramFiles%\Git\cmd\git.exe" set "PATH=%PATH%;%ProgramFiles%\Git\cmd"
+for /d %%D in ("%LocalAppData%\Programs\Python\Python3*") do set "PATH=%PATH%;%%~fD;%%~fD\Scripts"
 exit /b 0
 
 :fail
