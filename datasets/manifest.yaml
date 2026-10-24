@@ -1,0 +1,143 @@
+# Darubini dataset manifest.
+# `make data` (or `darubini download --tier core`) reads this file.
+# Tiers: core = needed for the hackathon build; extended = useful extras; large = very big, opt-in.
+# Kinds: http (direct download), git (clone), manual (needs a login or licence acceptance).
+#
+# Image files are NEVER committed to git. They land in datasets/raw/<id>/ (git-ignored).
+# Always cite the original authors; see datasets/README.md.
+
+datasets:
+  - id: udom-tz-thick
+    title: "Malaria Blood Smear Image Dataset (Tanzania, Morogoro)"
+    country: Tanzania
+    creators: "Shaka M. et al., University of Dodoma; Benjamin Mkapa Hospital"
+    smear: thick
+    stain: Giemsa
+    capture: "iPhone 6s+ on Olympus CX21, 100x oil"
+    annotations: "Bounding boxes, Pascal VOC XML: plasmodium, WBC"
+    size_bytes: 148900000
+    licence: CC-BY-4.0
+    doi: "10.5281/zenodo.4314960"
+    page: "https://zenodo.org/records/4314960"
+    tier: core
+    role: "Tanzanian count benchmark (parasites and WBC per field)"
+    kind: http
+    url: "https://zenodo.org/records/4314960/files/malaria_dataset.zip?download=1"
+    filename: malaria_dataset.zip
+    md5: 785f978f766047a7717ebb8dcaeedcdf
+
+  - id: nih-thick-pf-150
+    title: "NLM Thick Blood Smears, 150 P. falciparum patients"
+    country: Bangladesh
+    creators: "Yang F., Poostchi M., Yu H. et al., U.S. National Library of Medicine"
+    smear: thick
+    stain: Giemsa
+    capture: "Smartphone through eyepiece, 100x"
+    annotations: "Per-object points/circles: Parasite, White_Blood_Cell"
+    size_bytes: 3923792228
+    licence: "Public research data; attribution requested (see page)"
+    citation: "Yang et al., IEEE JBHI 24(5):1427-1438, 2020. doi:10.1109/JBHI.2019.2939121"
+    page: "https://data.lhncbc.nlm.nih.gov/public/Malaria/Thick_Smears_150/index.html"
+    tier: core
+    role: "Main training and count benchmark"
+    kind: http
+    url: "https://data.lhncbc.nlm.nih.gov/public/Malaria/Thick_Smears_150/ThickBloodSmears_150.zip"
+    filename: ThickBloodSmears_150.zip
+
+  - id: nih-thick-uninfected
+    title: "NLM Thick Blood Smears, uninfected patients"
+    country: Bangladesh
+    creators: "U.S. National Library of Medicine"
+    smear: thick
+    stain: Giemsa
+    annotations: "WBC annotations; no parasites (negative slides)"
+    size_bytes: 2452470961
+    licence: "Public research data; attribution requested (see page)"
+    page: "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThickBloodSmearsU/index.html"
+    tier: core
+    role: "Negative slides for specificity and the negative stopping rule"
+    kind: http
+    url: "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThickBloodSmearsU/NIH-NLM-ThickBloodSmearsU.zip"
+    filename: NIH-NLM-ThickBloodSmearsU.zip
+
+  - id: nm-aist-tz
+    title: "Blood smear imagery dataset for malaria parasite detection: A case of Tanzania"
+    country: Tanzania
+    creators: "Nelson Mandela African Institution of Science and Technology (NM-AIST), Arusha"
+    smear: "thick and thin"
+    stain: Giemsa
+    capture: "3840x2160 JPEG"
+    annotations: "Image-level labels: THICK_INFECTED, THICK_UNINFECTED, THIN_INFECTED, THIN_UNINFECTED (3,544 images)"
+    licence: "See Harvard Dataverse record"
+    page: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11648091/"
+    tier: extended
+    role: "Out-of-distribution slide-level test on Tanzanian slides"
+    kind: manual
+    instructions: >-
+      Open the data-availability link in the paper (Data in Brief, 2024) to reach the Harvard
+      Dataverse record, download the four folders and place them in datasets/raw/nm-aist-tz/.
+      A community mirror exists on Kaggle (tofael088/the-nelson-mandela-aist-malaria-dataset);
+      prefer the original record and cite the paper.
+
+  - id: nih-thin-cells
+    title: "NLM Malaria Cell Images (thin-smear single cells)"
+    country: Bangladesh
+    creators: "U.S. National Library of Medicine"
+    smear: thin
+    stain: Giemsa
+    annotations: "Cell crops labelled Parasitized / Uninfected"
+    size_bytes: 353452851
+    licence: "Public research data; attribution requested"
+    page: "https://data.lhncbc.nlm.nih.gov/public/Malaria/index.html"
+    tier: extended
+    role: "Thin-smear stretch goal and classifier pre-training"
+    kind: http
+    url: "https://data.lhncbc.nlm.nih.gov/public/Malaria/cell_images.zip"
+    filename: cell_images.zip
+
+  - id: mp-idb
+    title: "MP-IDB: Malaria Parasite Image Database"
+    country: Italy
+    creators: "Loddo A. et al., University of Cagliari"
+    smear: thin
+    stain: Giemsa
+    annotations: "Masks for 4 species (falciparum, malariae, ovale, vivax) and life stages"
+    licence: "See repository"
+    page: "https://github.com/andrealoddo/MP-IDB-The-Malaria-Parasite-Image-Database-for-Image-Processing-and-Analysis"
+    tier: extended
+    role: "Species and stage stretch goal; mask quality check for SAM 3"
+    kind: git
+    url: "https://github.com/andrealoddo/MP-IDB-The-Malaria-Parasite-Image-Database-for-Image-Processing-and-Analysis.git"
+
+  - id: colombia-ins-thick
+    title: "Malaria parasites in Romanowsky-stained thick blood smears (Colombia INS)"
+    country: Colombia
+    creators: "University of Luxembourg; Pontificia Universidad Javeriana; Universidade Federal do Para"
+    smear: thick
+    stain: Romanowsky
+    annotations: "6,188 parasites labelled by stage across 1,000 images"
+    size_bytes: 8000000000
+    licence: "Not stated on the record; confirm before use"
+    page: "https://zenodo.org/record/7484518"
+    tier: large
+    role: "Stain and stage robustness"
+    kind: manual
+    instructions: "Download from the Zenodo record into datasets/raw/colombia-ins-thick/ after checking the licence."
+
+  - id: nlm-sudan
+    title: "NLM Malaria Screener, Sudan (thick + thin, 190 patients)"
+    country: Sudan
+    creators: "U.S. National Library of Medicine"
+    smear: "thick and thin"
+    stain: Giemsa
+    annotations: "Expert image-level parasite and WBC counts; positive and negative patients"
+    size_bytes: 49174857598
+    licence: "Data licence agreement required (Data-License-Agreement.pdf)"
+    citation: "Yu H. et al., Malaria Journal, 2023"
+    page: "https://data.lhncbc.nlm.nih.gov/public/Malaria/MalariaScreener/index.html"
+    tier: large
+    role: "Patient-level count validation from an African site"
+    kind: manual
+    instructions: >-
+      Read and accept Data-License-Agreement.pdf on the page, then download SudanData.zip (49 GB)
+      into datasets/raw/nlm-sudan/.
