@@ -88,6 +88,7 @@ echo [5/5] downloads started %date% %time% >> "%LOG%"
 echo [5/5] downloads finished %date% %time% exit=%errorlevel% >> "%LOG%"
 
 ".venv\Scripts\darubini.exe" verify > "%STATUS%" 2>&1
+".venv\Scripts\darubini.exe" profile >> "%STATUS%" 2>&1
 echo.
 type "%STATUS%"
 echo.

@@ -1,4 +1,4 @@
-"""Command-line interface: ``darubini datasets | download | verify | links | analyse | serve``."""
+"""Command-line interface for downloading data, checking it, and running Darubini."""
 
 from __future__ import annotations
 
@@ -80,6 +80,26 @@ def _cmd_links(args: argparse.Namespace) -> int:
     return 1 if broken else 0
 
 
+def _cmd_profile(args: argparse.Namespace) -> int:
+    from darubini.data.profile import profile, render
+    from darubini.data.registry import load_manifest
+
+    profiles = [
+        profile(spec.id, args.raw_dir / spec.id)
+        for spec in load_manifest(args.manifest).datasets
+        if (args.raw_dir / spec.id).is_dir()
+    ]
+    text = render(profiles)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(text, encoding="utf-8")
+    for p in profiles:
+        print(
+            f"{p.dataset_id:22} {p.files:>7,} files  {p.images:>7,} images  {p.annotation_format}"
+        )
+    print(f"\nFull profile written to {args.out}")
+    return 0
+
+
 def _cmd_verify(args: argparse.Namespace) -> int:
     from darubini.data.download import status
     from darubini.data.registry import load_manifest
@@ -148,6 +168,12 @@ def build_parser() -> argparse.ArgumentParser:
     vf.add_argument("--manifest", type=Path, default=manifest_default)
     vf.add_argument("--raw-dir", type=Path, default=Path("datasets/raw"))
     vf.set_defaults(func=_cmd_verify)
+
+    pf = sub.add_parser("profile", help="summarise what each downloaded dataset contains")
+    pf.add_argument("--manifest", type=Path, default=manifest_default)
+    pf.add_argument("--raw-dir", type=Path, default=Path("datasets/raw"))
+    pf.add_argument("--out", type=Path, default=Path("datasets/PROFILE.md"))
+    pf.set_defaults(func=_cmd_profile)
 
     lk = sub.add_parser("links", help="check every dataset source is still reachable")
     lk.add_argument("--manifest", type=Path, default=manifest_default)
