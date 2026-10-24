@@ -15,6 +15,8 @@ from pathlib import Path
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp"}
 ANNOTATION_EXTS = {".xml", ".json", ".txt", ".csv"}
 MAX_JSON_BYTES = 200 * 1024 * 1024
+SKIP_NAMES = {".complete", ".gitkeep", "Thumbs.db", "desktop.ini"}
+SKIP_DIRS = {".git", ".ipynb_checkpoints", "__MACOSX"}
 
 
 @dataclass
@@ -74,7 +76,9 @@ def profile(dataset_id: str, root: Path, samples_per_ext: int = 3) -> DatasetPro
     """Walk one dataset folder and summarise it."""
     p = DatasetProfile(dataset_id)
     for path in sorted(root.rglob("*")):
-        if not path.is_file() or path.name in {".complete", ".gitkeep"}:
+        if not path.is_file() or path.name in SKIP_NAMES:
+            continue
+        if any(part in SKIP_DIRS for part in path.relative_to(root).parts):
             continue
         ext = path.suffix.lower() or "(none)"
         rel = path.relative_to(root)

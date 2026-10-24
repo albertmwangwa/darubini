@@ -42,7 +42,9 @@ A GitHub Action (`.github/workflows/dataset-links.yml`) runs the link check ever
 **`udom-tz-thick`: Malaria Blood Smear Image Dataset (Tanzania)**
 - Creators: Shaka M., Apina F. R., Waigama N., Ngatunga E., Mmaka S., Maneno H., Said S. H. (University of Dodoma); Chaula S., Sulutya I., Mashaka M. (Benjamin Mkapa Hospital)
 - Patients resident in Morogoro Region. Giemsa thick smears photographed with an iPhone 6s+ on an Olympus CX21 at 100x.
-- Labels: bounding boxes for *plasmodium* and *WBC* in Pascal VOC XML, by three experts. Parse with `darubini.data.annotations.parse_voc`.
+- **What actually ships** (checked with `darubini profile` on 24 Oct 2026): 5,453 tiles of 750×750 px cut from **611 original photos**, each with a Pascal VOC XML file, plus one COCO file (`output.json`) with the same boxes and a `mapper.csv` linking every tile to its photo.
+- Labels: **21,796 parasite and 2,457 WBC boxes**. Category names are inconsistent ("Plasmodium trophozoite(s)", "Plasimodium trophozoite", "plasmodium"); `normalise_label` matches them by keyword. One gametocyte (excluded from asexual density) and one ambiguous "WBCPlasmodium trophozoite" box are skipped.
+- Parse with `parse_coco` (all tiles at once) or `parse_voc` (one tile). **Split by original photo** with `parse_tile_mapper`, never by tile, or neighbouring tiles of one photo leak across the split.
 - 149 MB zip, MD5 `785f978f766047a7717ebb8dcaeedcdf`. Licence **CC BY 4.0**. [Zenodo record](https://zenodo.org/records/4314960), doi:10.5281/zenodo.4314960
 - **Role:** held-out Tanzanian count benchmark.
 
@@ -79,7 +81,7 @@ On 24 October 2026 the project owner accepted the NLM Malaria Screener (Sudan) t
 
 ## Rules for using the data
 
-1. Split **by patient**, never by image.
+1. Split **by patient**, never by image (for UDOM, by original photo, since patient IDs are not given).
 2. Never tune anything on the Tanzanian test sets.
 3. Keep each dataset's licence and cite its authors in any publication or demo.
 4. Do not commit images, archives or derived crops; `.gitignore` and pre-commit enforce this.
