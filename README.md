@@ -118,7 +118,7 @@ make setup          # venv, dev dependencies, pre-commit hooks
 make check          # lint, types, security, tests: everything CI runs
 ```
 
-On **Windows** (no `make` needed):
+On **Windows**, the quickest route is to download [`scripts/setup-darubini.cmd`](scripts/setup-darubini.cmd) into the folder you want (for example `F:\Projects`) and double-click it: it clones the repo, installs everything and downloads the core datasets. Or step by step (no `make` needed):
 
 ```powershell
 git clone https://github.com/albertmwangwa/darubini.git
