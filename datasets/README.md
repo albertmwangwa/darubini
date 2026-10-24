@@ -31,7 +31,7 @@ A GitHub Action (`.github/workflows/dataset-links.yml`) runs the link check ever
 
 | Dataset | What to do |
 | --- | --- |
-| `nm-aist-tz` | `pip install kaggle`, create an API token at kaggle.com (Settings → API) and save it as `~/.kaggle/kaggle.json`. The downloader then fetches the community mirror; cite the original paper. |
+| `nm-aist-tz` | `pip install "kaggle>=1.8"`, create an API token at kaggle.com (Settings → API) and save it in `~/.kaggle/access_token` (new `KGAT_` tokens) or `~/.kaggle/kaggle.json` (legacy), or set `KAGGLE_API_TOKEN`. On Windows, `scripts\get-more-data.cmd` asks for it and saves it. Cite the original paper. |
 | `colombia-ins-thick` | The Zenodo record states no licence. Confirm you may use it, then pass `--accept-licences`. |
 | `nlm-sudan` | Read and accept the NLM data licence agreement on its page (49 GB download), then pass `--accept-licences`. |
 

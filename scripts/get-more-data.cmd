@@ -27,16 +27,32 @@ set "PATH=%REPO%\.venv\Scripts;%PATH%"
 echo Extra datasets started %date% %time% > "%LOG%"
 
 git pull --ff-only >> "%LOG%" 2>&1
-python -m pip install -e . kaggle >> "%LOG%" 2>&1
+python -m pip install -e . "kaggle>=1.8" >> "%LOG%" 2>&1
 
 echo.
 echo [1/3] NM-AIST Tanzania via Kaggle
-if exist "%USERPROFILE%\.kaggle\kaggle.json" (
+set "KDIR=%USERPROFILE%\.kaggle"
+set "HAVEKEY="
+if defined KAGGLE_API_TOKEN set "HAVEKEY=1"
+if exist "%KDIR%\access_token" set "HAVEKEY=1"
+if exist "%KDIR%\access_token.txt" set "HAVEKEY=1"
+if exist "%KDIR%\kaggle.json" set "HAVEKEY=1"
+if not defined HAVEKEY (
+  echo   No Kaggle token found. Create one at kaggle.com ^> Settings ^> API ^> Create New Token.
+  set /p "KTOKEN=  Paste it here and press Enter (or just press Enter to skip): "
+)
+if not defined HAVEKEY if defined KTOKEN (
+  if not exist "%KDIR%" mkdir "%KDIR%"
+  > "%KDIR%\access_token" <nul set /p "=%KTOKEN%"
+  set "HAVEKEY=1"
+  set "KTOKEN="
+  echo   Saved to %KDIR%\access_token
+)
+if defined HAVEKEY (
   darubini download --only nm-aist-tz
 ) else (
-  echo   No Kaggle token found at %USERPROFILE%\.kaggle\kaggle.json
-  echo   Create one at kaggle.com ^> Settings ^> API ^> Create New Token, save it there, and rerun.
-  echo [1/3] skipped: no kaggle.json >> "%LOG%"
+  echo   Skipped NM-AIST: no Kaggle token.
+  echo [1/3] skipped: no kaggle token >> "%LOG%"
 )
 
 echo.
