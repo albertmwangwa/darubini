@@ -3,7 +3,7 @@ PY ?= python3
 VENV ?= .venv
 BIN := $(VENV)/bin
 
-.PHONY: help setup lint format typecheck security test check data data-extended datasets serve docker clean
+.PHONY: help setup lint format typecheck security test check data data-extended verify links datasets serve docker clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -42,7 +42,7 @@ datasets: ## List datasets in the manifest
 data: ## Download core datasets (~6.5 GB) into datasets/raw/
 	$(BIN)/darubini download --tier core
 
-data-extended: ## Core + extended datasets
+data-extended: ## Core + extended datasets (NM-AIST needs a Kaggle token)
 	$(BIN)/darubini download --tier extended
 
 serve: ## Run the API on http://127.0.0.1:8000 (docs at /docs)
@@ -54,3 +54,9 @@ docker: ## Build the container image
 clean: ## Remove caches and build output
 	rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov coverage.xml dist build
 	find . -name __pycache__ -type d -prune -exec rm -rf {} +
+
+verify: ## Show which datasets are ready
+	$(BIN)/darubini verify
+
+links: ## Check every dataset source is still online
+	$(BIN)/darubini links

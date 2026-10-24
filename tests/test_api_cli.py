@@ -67,4 +67,4 @@ def test_cli_download_manual_only(tmp_path, capsys):
         " page: p, role: r, instructions: by hand}\n"
     )
     assert main(["download", "--manifest", str(manifest), "--raw-dir", str(tmp_path / "raw")]) == 0
-    assert "Manual steps" in capsys.readouterr().out
+    assert "manual step needed" in capsys.readouterr().out

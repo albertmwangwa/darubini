@@ -105,7 +105,7 @@ flowchart LR
 | `darubini.data` | Dataset manifest, resumable checksum-verified downloads, annotation parsers |
 | `darubini.evaluation` | Detection precision/recall/F1, count MAE and bias, slide sensitivity/specificity |
 | `darubini.api` | FastAPI service (`POST /v1/analyse`, `GET /health`, OpenAPI docs at `/docs`) |
-| `darubini.cli` | `darubini datasets | download | analyse | serve` |
+| `darubini.cli` | `darubini datasets`, `download`, `verify`, `links`, `analyse`, `serve` |
 
 ## Quick start
 
@@ -116,6 +116,15 @@ git clone https://github.com/albertmwangwa/darubini.git
 cd darubini
 make setup          # venv, dev dependencies, pre-commit hooks
 make check          # lint, types, security, tests: everything CI runs
+```
+
+On **Windows** (no `make` needed):
+
+```powershell
+git clone https://github.com/albertmwangwa/darubini.git
+cd darubini
+powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
+powershell -ExecutionPolicy Bypass -File scripts\get-data.ps1        # core datasets
 ```
 
 Try it offline with the baseline segmenter (no API key needed):
@@ -142,21 +151,26 @@ make docker && docker run -p 8000:8000 --env-file .env darubini:local
 Images are **never committed**. The manifest at [`datasets/manifest.yaml`](datasets/manifest.yaml) lists every source, and one command fetches them with resume support and checksum verification:
 
 ```bash
-make datasets       # list everything with size, tier and licence
+make datasets       # list everything with size, tier and source
 make data           # core tier, about 6.5 GB, into datasets/raw/
-make data-extended  # adds thin-smear and species sets
+make data-extended  # adds NM-AIST Tanzania (via Kaggle), thin-smear and species sets
+.venv/bin/darubini download --tier large --accept-licences   # after reading the two licences
+.venv/bin/darubini verify   # ready / partial / missing for every dataset
+.venv/bin/darubini links    # check every source is still online (also runs weekly in CI)
 ```
+
+Downloads check free disk space first, resume after interruptions, verify MD5 checksums where the provider publishes them, and keep going if one source fails, with a summary at the end.
 
 | ID | Origin | Smear | Labels | Size | Tier | Role |
 | --- | --- | --- | --- | --- | --- | --- |
 | `udom-tz-thick` | **Tanzania** (Morogoro), University of Dodoma | Thick, Giemsa | Boxes: parasites + WBC (VOC) | 149 MB | core | **Tanzanian count benchmark** |
 | `nih-thick-pf-150` | Bangladesh, U.S. NLM | Thick, Giemsa | Points per parasite + WBC | 3.9 GB | core | Main training and count set |
 | `nih-thick-uninfected` | Bangladesh, U.S. NLM | Thick, Giemsa | WBC; negative slides | 2.5 GB | core | Specificity, negative rule |
-| `nm-aist-tz` | **Tanzania** (Arusha), NM-AIST | Thick + thin | Image-level, 3,544 images | ~GBs | extended (manual) | Out-of-distribution slide test |
+| `nm-aist-tz` | **Tanzania** (Arusha), NM-AIST | Thick + thin | Image-level, 3,544 images | ~GBs | extended (Kaggle CLI) | Out-of-distribution slide test |
 | `nih-thin-cells` | Bangladesh, U.S. NLM | Thin | Cell crops | 353 MB | extended | Thin-smear stretch goal |
 | `mp-idb` | Italy, Univ. of Cagliari | Thin | Masks, 4 species | small | extended | Species and stage stretch goal |
-| `colombia-ins-thick` | Colombia, INS | Thick, Romanowsky | 6,188 parasites by stage | 8 GB | large (manual) | Stain robustness |
-| `nlm-sudan` | Sudan, U.S. NLM | Thick + thin | Expert counts, 190 patients | 49 GB | large (manual) | African patient-level validation |
+| `colombia-ins-thick` | Colombia, INS | Thick, Romanowsky | 6,188 parasites by stage | 8 GB | large (licence check) | Stain robustness |
+| `nlm-sudan` | Sudan, U.S. NLM | Thick + thin | Expert counts, 190 patients | 49 GB | large (licence agreement) | African patient-level validation |
 
 The **training and test split is by patient**, never by image, so no patient appears on both sides. Full details, licences and citations: [`datasets/README.md`](datasets/README.md).
 

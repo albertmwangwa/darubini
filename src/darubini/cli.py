@@ -1,4 +1,4 @@
-"""Command-line interface: ``darubini download | datasets | analyse | serve``."""
+"""Command-line interface: ``darubini datasets | download | verify | links | analyse | serve``."""
 
 from __future__ import annotations
 
@@ -23,18 +23,78 @@ def _cmd_datasets(args: argparse.Namespace) -> int:
 
 
 def _cmd_download(args: argparse.Namespace) -> int:
-    from darubini.data.download import download
+    from darubini.data.download import DownloadError, LicenceNotAcceptedError, check_space, download
     from darubini.data.registry import load_manifest
 
     manifest = load_manifest(args.manifest)
     specs = [manifest.get(i) for i in args.only] if args.only else manifest.up_to_tier(args.tier)
+    if not args.skip_space_check:
+        try:
+            check_space(specs, args.raw_dir)
+        except DownloadError as exc:
+            print(f"error: {exc}. Free up space or pass --skip-space-check.")
+            return 2
+    done: list[str] = []
     manual: list[str] = []
+    licence: list[str] = []
+    failed: list[str] = []
     for spec in specs:
-        if download(spec, args.raw_dir, keep_archive=args.keep_archives) is None:
-            manual.append(spec.id)
-    if manual:
-        print(f"\nManual steps still needed for: {', '.join(manual)} (see datasets/README.md)")
-    return 0
+        try:
+            result = download(
+                spec,
+                args.raw_dir,
+                keep_archive=args.keep_archives,
+                accept_licences=args.accept_licences,
+            )
+        except LicenceNotAcceptedError as exc:
+            licence.append(spec.id)
+            print(f"skipped: {exc}")
+            continue
+        except DownloadError as exc:
+            failed.append(spec.id)
+            print(f"failed: {exc}")
+            continue
+        (done if result is not None else manual).append(spec.id)
+    print("\nSummary")
+    for label, ids in (
+        ("ready", done),
+        ("manual step needed", manual),
+        ("licence not accepted", licence),
+        ("failed", failed),
+    ):
+        if ids:
+            print(f"  {label:22} {', '.join(ids)}")
+    print("Run `darubini verify` to see every dataset's status; details in datasets/README.md.")
+    return 1 if failed else 0
+
+
+def _cmd_links(args: argparse.Namespace) -> int:
+    from darubini.data.download import check_link
+    from darubini.data.registry import load_manifest
+
+    broken = 0
+    for spec in load_manifest(args.manifest).datasets:
+        ok, detail = check_link(spec)
+        broken += not ok
+        print(f"{'ok ' if ok else 'BAD'} {spec.id:22} {detail}")
+    return 1 if broken else 0
+
+
+def _cmd_verify(args: argparse.Namespace) -> int:
+    from darubini.data.download import status
+    from darubini.data.registry import load_manifest
+
+    manifest = load_manifest(args.manifest)
+    missing_core = False
+    print(f"{'dataset':22} {'tier':9} {'status':8} {'files':>7}")
+    for spec in manifest.datasets:
+        state, n = status(spec, args.raw_dir)
+        print(f"{spec.id:22} {spec.tier:9} {state:8} {n:>7}")
+        if spec.tier == "core" and state != "ready":
+            missing_core = True
+    if missing_core:
+        print("\nCore datasets are not all ready: run `darubini download --tier core`.")
+    return 1 if missing_core else 0
 
 
 def _cmd_analyse(args: argparse.Namespace) -> int:
@@ -76,7 +136,22 @@ def build_parser() -> argparse.ArgumentParser:
     dl.add_argument("--only", nargs="+", metavar="ID", help="download only these dataset ids")
     dl.add_argument("--raw-dir", type=Path, default=Path("datasets/raw"))
     dl.add_argument("--keep-archives", action="store_true")
+    dl.add_argument(
+        "--accept-licences",
+        action="store_true",
+        help="confirm you have read and accepted licences for datasets that require it",
+    )
+    dl.add_argument("--skip-space-check", action="store_true")
     dl.set_defaults(func=_cmd_download)
+
+    vf = sub.add_parser("verify", help="show which datasets are ready")
+    vf.add_argument("--manifest", type=Path, default=manifest_default)
+    vf.add_argument("--raw-dir", type=Path, default=Path("datasets/raw"))
+    vf.set_defaults(func=_cmd_verify)
+
+    lk = sub.add_parser("links", help="check every dataset source is still reachable")
+    lk.add_argument("--manifest", type=Path, default=manifest_default)
+    lk.set_defaults(func=_cmd_links)
 
     an = sub.add_parser("analyse", help="analyse field images of one slide")
     an.add_argument("images", nargs="+", type=Path)

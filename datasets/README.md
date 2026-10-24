@@ -9,7 +9,31 @@ make data-extended   # core + extended
 .venv/bin/darubini download --only udom-tz-thick   # just one
 ```
 
-Downloads resume if interrupted, are checked against published checksums where available, and land in `datasets/raw/<id>/` (git-ignored). A `.complete` marker makes re-runs skip finished sets.
+On Windows use `scripts\setup.ps1` then `scripts\get-data.ps1 -Tier core` (add `-AcceptLicences` for the large tier).
+
+What the downloader does:
+
+- **Checks disk space** before starting (archive plus extracted copy, about twice the archive size).
+- **Resumes** interrupted downloads from a `.part` file.
+- **Verifies MD5 checksums** wherever the provider publishes one (UDOM and every Zenodo file).
+- **Keeps going** if one source fails and prints a summary: ready, manual step needed, licence not accepted, failed.
+- **Skips licence-gated sets** (Colombia, Sudan) unless you pass `--accept-licences` after reading their terms.
+- Lands everything in `datasets/raw/<id>/` (git-ignored) with a `.complete` marker so re-runs skip finished sets.
+
+```bash
+.venv/bin/darubini verify   # status of every dataset; exits non-zero if a core set is missing
+.venv/bin/darubini links    # check every source is still online
+```
+
+A GitHub Action (`.github/workflows/dataset-links.yml`) runs the link check every Monday and whenever the manifest changes.
+
+### Sources that need a credential or a decision
+
+| Dataset | What to do |
+| --- | --- |
+| `nm-aist-tz` | `pip install kaggle`, create an API token at kaggle.com (Settings → API) and save it as `~/.kaggle/kaggle.json`. The downloader then fetches the community mirror; cite the original paper. |
+| `colombia-ins-thick` | The Zenodo record states no licence. Confirm you may use it, then pass `--accept-licences`. |
+| `nlm-sudan` | Read and accept the NLM data licence agreement on its page (49 GB download), then pass `--accept-licences`. |
 
 ## Catalogue
 
@@ -34,9 +58,9 @@ Downloads resume if interrupted, are checked against published checksums where a
 
 ### Extended
 
-**`nm-aist-tz`: Blood smear imagery dataset, a case of Tanzania (manual)**
+**`nm-aist-tz`: Blood smear imagery dataset, a case of Tanzania (Kaggle CLI)**
 - Nelson Mandela African Institution of Science and Technology, Arusha. 3,544 images (3840x2160): 1,139 thick infected, 1,071 thick uninfected, 1,064 thin infected, 270 thin uninfected. Image-level labels.
-- Download from the Harvard Dataverse record linked in the paper ([PMC article](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11648091/)) into `datasets/raw/nm-aist-tz/`. A community mirror exists on Kaggle; prefer the original and cite the paper.
+- Downloaded through the Kaggle CLI from a community mirror. The original is on Harvard Dataverse, linked from the [paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11648091/); cite the paper either way.
 - **Role:** held-out slide-level test on Tanzanian slides.
 
 **`nih-thin-cells`:** NLM thin-smear cell crops (353 MB). Thin-smear stretch goal.
@@ -45,9 +69,9 @@ Downloads resume if interrupted, are checked against published checksums where a
 
 ### Large (opt-in)
 
-**`colombia-ins-thick` (manual):** 1,000 Romanowsky-stained thick-smear images with 6,188 labelled parasites, about 8 GB. The licence is not stated on the [record](https://zenodo.org/record/7484518); confirm before use.
+**`colombia-ins-thick` (Zenodo, licence check):** 1,000 Romanowsky-stained thick-smear images with 6,188 labelled parasites, about 8 GB. The licence is not stated on the [record](https://zenodo.org/record/7484518); confirm before use.
 
-**`nlm-sudan` (manual):** NLM Malaria Screener, Sudan; 190 patients with expert counts, 49 GB. Requires accepting the [data licence agreement](https://data.lhncbc.nlm.nih.gov/public/Malaria/MalariaScreener/index.html). Cite Yu et al., Malaria Journal 2023.
+**`nlm-sudan` (licence agreement):** NLM Malaria Screener, Sudan; 190 patients with expert counts, 49 GB. Requires accepting the [data licence agreement](https://data.lhncbc.nlm.nih.gov/public/Malaria/MalariaScreener/index.html). Cite Yu et al., Malaria Journal 2023.
 
 ## Rules for using the data
 

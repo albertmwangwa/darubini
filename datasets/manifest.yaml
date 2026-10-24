@@ -1,7 +1,9 @@
 # Darubini dataset manifest.
 # `make data` (or `darubini download --tier core`) reads this file.
 # Tiers: core = needed for the hackathon build; extended = useful extras; large = very big, opt-in.
-# Kinds: http (direct download), git (clone), manual (needs a login or licence acceptance).
+# Kinds: http (direct download), zenodo (all files of a record), git (clone),
+#        kaggle (Kaggle CLI + API token), manual (instructions only).
+# requires_licence_acceptance: true -> skipped unless you pass --accept-licences after reading it.
 #
 # Image files are NEVER committed to git. They land in datasets/raw/<id>/ (git-ignored).
 # Always cite the original authors; see datasets/README.md.
@@ -72,12 +74,12 @@ datasets:
     page: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11648091/"
     tier: extended
     role: "Out-of-distribution slide-level test on Tanzanian slides"
-    kind: manual
+    kind: kaggle
+    kaggle_slug: "tofael088/the-nelson-mandela-aist-malaria-dataset"
     instructions: >-
-      Open the data-availability link in the paper (Data in Brief, 2024) to reach the Harvard
-      Dataverse record, download the four folders and place them in datasets/raw/nm-aist-tz/.
-      A community mirror exists on Kaggle (tofael088/the-nelson-mandela-aist-malaria-dataset);
-      prefer the original record and cite the paper.
+      The original is on Harvard Dataverse (link in the paper's data-availability statement).
+      This entry downloads the community Kaggle mirror; cite the original paper either way.
+      Without the Kaggle CLI, download the four folders by hand into datasets/raw/nm-aist-tz/.
 
   - id: nih-thin-cells
     title: "NLM Malaria Cell Images (thin-smear single cells)"
@@ -121,8 +123,9 @@ datasets:
     page: "https://zenodo.org/record/7484518"
     tier: large
     role: "Stain and stage robustness"
-    kind: manual
-    instructions: "Download from the Zenodo record into datasets/raw/colombia-ins-thick/ after checking the licence."
+    kind: zenodo
+    zenodo_record: "7484518"
+    requires_licence_acceptance: true
 
   - id: nlm-sudan
     title: "NLM Malaria Screener, Sudan (thick + thin, 190 patients)"
@@ -137,7 +140,7 @@ datasets:
     page: "https://data.lhncbc.nlm.nih.gov/public/Malaria/MalariaScreener/index.html"
     tier: large
     role: "Patient-level count validation from an African site"
-    kind: manual
-    instructions: >-
-      Read and accept Data-License-Agreement.pdf on the page, then download SudanData.zip (49 GB)
-      into datasets/raw/nlm-sudan/.
+    kind: http
+    url: "https://data.lhncbc.nlm.nih.gov/public/Malaria/MalariaScreener/SudanData.zip"
+    filename: SudanData.zip
+    requires_licence_acceptance: true

@@ -9,7 +9,7 @@ import yaml
 from pydantic import BaseModel, Field, model_validator
 
 Tier = Literal["core", "extended", "large"]
-Kind = Literal["http", "git", "manual"]
+Kind = Literal["http", "git", "zenodo", "kaggle", "manual"]
 TIER_ORDER: dict[str, int] = {"core": 0, "extended": 1, "large": 2}
 
 
@@ -36,6 +36,9 @@ class DatasetSpec(BaseModel):
     doi: str | None = None
     citation: str | None = None
     capture: str | None = None
+    zenodo_record: str | None = Field(default=None, pattern=r"^[0-9]+$")
+    kaggle_slug: str | None = Field(default=None, pattern=r"^[\w.-]+/[\w.-]+$")
+    requires_licence_acceptance: bool = False
 
     @model_validator(mode="after")
     def _check_kind_fields(self) -> DatasetSpec:
@@ -43,6 +46,10 @@ class DatasetSpec(BaseModel):
             raise ValueError(f"{self.id}: kind={self.kind} needs a url")
         if self.kind == "http" and not self.filename:
             raise ValueError(f"{self.id}: kind=http needs a filename")
+        if self.kind == "zenodo" and not self.zenodo_record:
+            raise ValueError(f"{self.id}: kind=zenodo needs zenodo_record")
+        if self.kind == "kaggle" and not self.kaggle_slug:
+            raise ValueError(f"{self.id}: kind=kaggle needs kaggle_slug")
         if self.kind == "manual" and not self.instructions:
             raise ValueError(f"{self.id}: kind=manual needs instructions")
         return self
