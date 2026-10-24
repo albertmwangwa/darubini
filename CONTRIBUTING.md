@@ -10,10 +10,6 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 Never commit dataset images, API keys or `.env` files.
 
-## Auto-merge
+## Reviews
 
-Pull requests into `main` merge themselves (squash) once all seven quality checks have finished and **at least 4 of the 7 passed**: lint and type-check, tests on Python 3.10, 3.11 and 3.12, security scans, Docker build and CodeQL. The rule lives in [`.github/workflows/auto-merge.yml`](.github/workflows/auto-merge.yml) (`MIN_PASSING`).
-
-- Drafts, pull requests from forks and pull requests targeting other branches are never auto-merged.
-- Add the **`no-automerge`** label to hold a pull request for manual review.
-- The workflow posts a summary of every check and comments on the pull request when it merges.
+Every pull request is reviewed and merged by hand. Small direct changes can be committed straight to `main`; CI runs on every push either way.
