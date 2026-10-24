@@ -30,6 +30,8 @@ jobs:
         run: ruff format --check .
       - name: Mypy (strict)
         run: mypy
+      - name: Actionlint (workflow files)
+        run: pip install actionlint-py && actionlint
 
   test:
     name: Tests (Python ${{ matrix.python }})
