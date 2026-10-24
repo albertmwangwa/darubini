@@ -73,6 +73,10 @@ A GitHub Action (`.github/workflows/dataset-links.yml`) runs the link check ever
 
 **`nlm-sudan` (licence agreement):** NLM Malaria Screener, Sudan; 190 patients with expert counts, 49 GB. Requires accepting the [data licence agreement](https://data.lhncbc.nlm.nih.gov/public/Malaria/MalariaScreener/index.html). Cite Yu et al., Malaria Journal 2023.
 
+## Licence decisions on record
+
+On 24 October 2026 the project owner accepted the NLM Malaria Screener (Sudan) terms (use with the credit "Source: U.S. National Library of Medicine" and a citation of Yu et al., Malaria Journal 2023) and chose to use the Colombia INS set for research with attribution, as its record states no licence. `scripts\get-more-data.cmd` downloads both, plus NM-AIST through Kaggle.
+
 ## Rules for using the data
 
 1. Split **by patient**, never by image.
