@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#5b2a86">
+<title>Darubini</title>
+<style>
+  :root {
+    --bg: #faf7fb; --card: #ffffff; --ink: #1f1a24; --muted: #6b6273; --line: #e6dfea;
+    --brand: #5b2a86; --brand-ink: #ffffff; --parasite: #d1006f; --wbc: #1f6fd1;
+    --ok: #1d7a46; --ok-bg: #e5f4ea; --warn: #8a5a00; --warn-bg: #fff3d6;
+    --bad: #a1132b; --bad-bg: #fde7ea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141017; --card: #1e1923; --ink: #f1ecf4; --muted: #a79daf; --line: #352d3c;
+      --brand: #a77dd6; --brand-ink: #141017; --parasite: #ff5fae; --wbc: #6aa8ff;
+      --ok: #7ad19b; --ok-bg: #173323; --warn: #f2c26b; --warn-bg: #3a2c0f;
+      --bad: #ff8b9c; --bad-bg: #3d1820;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; background: var(--brand); color: var(--brand-ink);
+  }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: .02em; flex: 1; }
+  .lang { display: flex; border: 1px solid currentColor; border-radius: 999px; overflow: hidden; }
+  .lang button {
+    border: 0; background: transparent; color: inherit; padding: 4px 12px; font: inherit;
+    font-size: 14px; cursor: pointer;
+  }
+  .lang button[aria-pressed="true"] { background: var(--brand-ink); color: var(--brand); }
+  main { max-width: 640px; margin: 0 auto; padding: 16px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 16px; margin-bottom: 14px;
+  }
+  .muted { color: var(--muted); font-size: 14px; }
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+    min-height: 52px; margin: 8px 0; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer;
+  }
+  .btn.primary { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+  .btn:disabled { opacity: .5; cursor: progress; }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+  .stat b { display: block; font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 13px; color: var(--muted); }
+  .stat.p b { color: var(--parasite); }
+  .stat.w b { color: var(--wbc); }
+  .bar { height: 10px; background: var(--line); border-radius: 999px; overflow: hidden; margin: 12px 0 4px; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--wbc); transition: width .4s; }
+  .banner { border-radius: 12px; padding: 12px 14px; font-weight: 600; margin-bottom: 14px; }
+  .banner.next { background: var(--ok-bg); color: var(--ok); }
+  .banner.retake { background: var(--bad-bg); color: var(--bad); }
+  .banner.finish { background: var(--warn-bg); color: var(--warn); }
+  canvas { width: 100%; height: auto; border-radius: 10px; display: block; background: #000; }
+  .legend { display: flex; gap: 14px; font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+  ol.steps { padding-left: 22px; margin: 0; }
+  ol.steps li { margin: 6px 0; }
+  ol.steps small { color: var(--muted); display: block; word-break: break-word; }
+  pre { white-space: pre-wrap; font: 15px/1.5 ui-monospace, Consolas, monospace; margin: 0; }
+  .warn { background: var(--warn-bg); color: var(--warn); border-radius: 12px; padding: 12px 14px; }
+  .hidden { display: none !important; }
+  .spinner {
+    width: 18px; height: 18px; border: 3px solid currentColor; border-right-color: transparent;
+    border-radius: 50%; animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  input[type=file] { display: none; }
+  footer { text-align: center; padding: 8px 16px 28px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Darubini</h1>
+  <div class="lang" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN</button>
+    <button type="button" data-lang="sw" aria-pressed="false">SW</button>
+  </div>
+</header>
+
+<main>
+  <!-- start -->
+  <section id="start">
+    <div class="card">
+      <h2 data-t="welcome"></h2>
+      <p data-t="intro"></p>
+      <button class="btn primary" id="begin" data-t="begin"></button>
+    </div>
+  </section>
+
+  <!-- capture -->
+  <section id="capture" class="hidden">
+    <div id="banner" class="banner next hidden"></div>
+    <div class="card">
+      <div class="stats">
+        <div class="stat p"><b id="sP">0</b><span data-t="parasites"></span></div>
+        <div class="stat w"><b id="sW">0</b><span data-t="wbcs"></span></div>
+        <div class="stat"><b id="sF">0</b><span data-t="fields"></span></div>
+      </div>
+      <div class="bar"><i id="wbcBar"></i></div>
+      <div class="muted" id="target"></div>
+    </div>
+    <div class="row">
+      <label class="btn primary" for="photo"><span data-t="photo"></span></label>
+      <label class="btn" for="clip"><span data-t="clip"></span></label>
+    </div>
+    <input id="photo" type="file" accept="image/*" capture="environment">
+    <input id="clip" type="file" accept="video/*" capture="environment">
+    <div id="busy" class="card hidden"><div class="row" style="align-items:center"><div class="spinner" style="flex:0 0 18px"></div><span data-t="analysing"></span></div></div>
+    <div id="last" class="card hidden">
+      <canvas id="view"></canvas>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--parasite)"></i><span data-t="parasites"></span></span>
+        <span><i class="dot" style="background:var(--wbc)"></i><span data-t="wbcs"></span></span>
+      </div>
+      <p id="lastText"></p>
+    </div>
+    <div id="clipCard" class="card hidden"></div>
+    <button class="btn" id="finish" data-t="finish"></button>
+  </section>
+
+  <!-- report -->
+  <section id="report" class="hidden">
+    <div class="card">
+      <h2 data-t="agentTitle"></h2>
+      <ol class="steps" id="steps"></ol>
+      <div id="agentBusy" class="row" style="align-items:center;margin-top:8px"><div class="spinner" style="flex:0 0 18px"></div><span class="muted" data-t="agentWorking"></span></div>
+    </div>
+    <div id="result" class="hidden">
+      <div id="auditBox" class="warn hidden" style="margin-bottom:14px"></div>
+      <div class="card" id="narrativeCard"><p id="narrative"></p></div>
+      <div class="card"><pre id="reportText"></pre></div>
+      <div class="card hidden" id="excludedCard"><h3 data-t="excluded"></h3><ul id="excluded"></ul></div>
+      <p class="muted" id="notes"></p>
+      <button class="btn primary" id="again" data-t="again"></button>
+    </div>
+  </section>
+</main>
+<footer class="muted" data-t="disclaimer"></footer>
+
+<script>
+"use strict";
+const T = {
+  en: {
+    welcome: "Count a thick blood film", begin: "Start a new slide",
+    intro: "Hold the phone to the eyepiece. Photograph one field at a time, or record a short clip while you pan the slide. Darubini counts parasites against white blood cells and tells you when to stop.",
+    parasites: "Parasites", wbcs: "White blood cells", fields: "Fields",
+    photo: "Photograph field", clip: "Record a pan", finish: "Finish slide",
+    analysing: "Analysing…", quality: "image quality", target: (w, t) => `${w} of ${t} white blood cells`,
+    next: (w, n) => `Move to the next field (${w} of ${n} white blood cells)`, retake: f => `Retake this field: ${f}`,
+    done: () => "Count complete. Finish the slide.",
+    fieldLine: (p, w) => `This field: ${p} parasites, ${w} white blood cells.`,
+    clipLine: c => `Clip of ${c.frames} frames: ${c.parasites} parasites and ${c.wbcs} white blood cells, each counted once (frame by frame it would be ${c.naive_parasites} and ${c.naive_wbcs}). Tracker: ${c.tracker}.`,
+    agentTitle: "Muse Spark agent", agentWorking: "The agent is checking the slide…",
+    excluded: "Fields the agent excluded", again: "Start another slide",
+    error: "Something went wrong: ", noFields: "Capture at least one field first.",
+    tools: { examine_next_fields: "Examined fields", review_field: "Second opinion on image quality",
+      exclude_field: "Excluded a field", audit_parasites: "Audited a sample of parasites",
+      get_count: "Checked the count", finish: "Wrote the report" },
+    disclaimer: "Decision support only. A qualified microscopist must confirm every result."
+  },
+  sw: {
+    welcome: "Hesabu filamu nene ya damu", begin: "Anza slaidi mpya",
+    intro: "Shika simu kwenye kifaa cha kuangalia (eyepiece). Piga picha sehemu moja baada ya nyingine, au rekodi video fupi ukisogeza slaidi. Darubini inahesabu vimelea dhidi ya chembe nyeupe za damu na kukuambia wakati wa kusimama.",
+    parasites: "Vimelea", wbcs: "Chembe nyeupe za damu", fields: "Sehemu",
+    photo: "Piga picha ya sehemu", clip: "Rekodi video", finish: "Maliza slaidi",
+    analysing: "Inachambua…", quality: "ubora wa picha", target: (w, t) => `${w} kati ya ${t} chembe nyeupe za damu`,
+    next: (w, n) => `Hamia sehemu inayofuata (chembe nyeupe ${w} kati ya ${n})`, retake: f => `Piga picha tena sehemu hii: ${f}`,
+    done: () => "Hesabu imekamilika. Maliza slaidi.",
+    fieldLine: (p, w) => `Sehemu hii: vimelea ${p}, chembe nyeupe za damu ${w}.`,
+    clipLine: c => `Video ya picha ${c.frames}: vimelea ${c.parasites} na chembe nyeupe ${c.wbcs}, kila kimoja kimehesabiwa mara moja (picha kwa picha ingekuwa ${c.naive_parasites} na ${c.naive_wbcs}). Kifuatiliaji: ${c.tracker}.`,
+    agentTitle: "Msaidizi wa Muse Spark", agentWorking: "Msaidizi anakagua slaidi…",
+    excluded: "Sehemu zilizoondolewa na msaidizi", again: "Anza slaidi nyingine",
+    error: "Hitilafu imetokea: ", noFields: "Piga picha angalau sehemu moja kwanza.",
+    tools: { examine_next_fields: "Imechunguza sehemu", review_field: "Maoni ya pili kuhusu ubora wa picha",
+      exclude_field: "Imeondoa sehemu", audit_parasites: "Imekagua sampuli ya vimelea",
+      get_count: "Imeangalia hesabu", finish: "Imeandika ripoti" },
+    disclaimer: "Msaada wa kufanya uamuzi tu. Mtaalamu wa hadubini aliyehitimu lazima athibitishe kila matokeo."
+  }
+};
+const UPLOAD_SIDE = 2048;
+let lang = "en", sid = null, fieldsKept = 0, lastNext = null, lastRunning = null;
+const $ = id => document.getElementById(id);
+const t = k => T[lang][k];
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-t]").forEach(el => { el.textContent = t(el.dataset.t); });
+  document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+  if (lastNext) showNext(lastNext);
+  try { localStorage.setItem("darubini-lang", lang); } catch (e) { /* storage may be blocked */ }
+}
+document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => { lang = b.dataset.lang; applyLang(); }));
+try { const saved = localStorage.getItem("darubini-lang"); if (saved === "sw" || saved === "en") lang = saved; } catch (e) { /* ignore */ }
+
+function show(section) {
+  ["start", "capture", "report"].forEach(s => $(s).classList.toggle("hidden", s !== section));
+  window.scrollTo(0, 0);
+}
+
+async function api(path, options = {}) {
+  const res = await fetch(path, options);
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.detail || res.statusText);
+  return body;
+}
+
+function updateRunning(r) {
+  lastRunning = r;
+  $("sP").textContent = r.parasites;
+  $("sW").textContent = r.wbcs;
+  $("sF").textContent = r.usable_fields;
+  $("wbcBar").style.width = Math.min(100, 100 * r.wbcs / r.wbc_target) + "%";
+  $("target").textContent = t("target")(r.wbcs, r.wbc_target);
+}
+
+function showNext(next, blocking) {
+  lastNext = next;
+  const b = $("banner");
+  b.className = "banner " + next.action;
+  if (next.action === "retake") {
+    next.blocking = blocking || next.blocking || {};
+    const why = (next.blocking[lang] || []).join("; ");
+    b.textContent = t("retake")(why || t("quality"));
+  } else {
+    const r = lastRunning || { wbcs: 0, wbc_target: 200 };
+    b.textContent = next.action === "next" ? t("next")(r.wbcs, r.wbc_target) : t("done")();
+  }
+}
+
+function setBusy(on) {
+  $("busy").classList.toggle("hidden", !on);
+  ["photo", "clip"].forEach(id => { $(id).disabled = on; });
+  $("finish").disabled = on;
+}
+
+async function downscale(file) {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, UPLOAD_SIDE / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise(r => canvas.toBlob(r, "image/jpeg", 0.85));
+  return { blob, bitmap: canvas };
+}
+
+function drawOverlay(source, field) {
+  const c = $("view");
+  c.width = source.width; c.height = source.height;
+  const g = c.getContext("2d");
+  g.drawImage(source, 0, 0);
+  const sx = source.width / field.width, sy = source.height / field.height;
+  const lw = Math.max(2, source.width / 400);
+  g.lineWidth = lw;
+  const css = getComputedStyle(document.documentElement);
+  for (const d of field.detections) {
+    const [x0, y0, x1, y1] = d.box;
+    if (d.class === "parasite") {
+      g.strokeStyle = css.getPropertyValue("--parasite");
+      const r = Math.max(6 * lw, (x1 - x0) * sx);
+      g.beginPath(); g.arc((x0 + x1) / 2 * sx, (y0 + y1) / 2 * sy, r, 0, 2 * Math.PI); g.stroke();
+    } else {
+      g.strokeStyle = css.getPropertyValue("--wbc");
+      g.strokeRect(x0 * sx, y0 * sy, (x1 - x0) * sx, (y1 - y0) * sy);
+    }
+  }
+}
+
+$("begin").addEventListener("click", async () => {
+  try {
+    const s = await api("/v1/sessions", { method: "POST" });
+    sid = s.session_id; fieldsKept = 0; lastNext = null;
+    $("banner").classList.add("hidden"); $("last").classList.add("hidden"); $("clipCard").classList.add("hidden");
+    updateRunning(s.running);
+    show("capture");
+  } catch (e) { alert(t("error") + e.message); }
+});
+
+$("photo").addEventListener("change", async ev => {
+  const file = ev.target.files[0]; ev.target.value = "";
+  if (!file) return;
+  setBusy(true);
+  try {
+    const { blob, bitmap } = await downscale(file);
+    const form = new FormData(); form.append("file", blob, "field.jpg");
+    const r = await api(`/v1/sessions/${sid}/fields`, { method: "POST", body: form });
+    drawOverlay(bitmap, r.field);
+    $("lastText").textContent = t("fieldLine")(r.field.parasites, r.field.wbcs);
+    $("last").classList.remove("hidden"); $("clipCard").classList.add("hidden");
+    if (r.field.kept) fieldsKept++;
+    updateRunning(r.running);
+    showNext(r.next, r.field.blocking_text);
+    $("banner").classList.remove("hidden");
+  } catch (e) { alert(t("error") + e.message); }
+  setBusy(false);
+});
+
+$("clip").addEventListener("change", async ev => {
+  const file = ev.target.files[0]; ev.target.value = "";
+  if (!file) return;
+  setBusy(true);
+  try {
+    const form = new FormData(); form.append("file", file, file.name || "clip.mp4");
+    const r = await api(`/v1/sessions/${sid}/clips`, { method: "POST", body: form });
+    fieldsKept++;
+    $("clipCard").textContent = t("clipLine")(r.clip);
+    $("clipCard").classList.remove("hidden"); $("last").classList.add("hidden");
+    updateRunning(r.running);
+    showNext(r.next);
+    $("banner").classList.remove("hidden");
+  } catch (e) { alert(t("error") + e.message); }
+  setBusy(false);
+});
+
+function stepLine(s) {
+  const li = document.createElement("li");
+  li.textContent = (t("tools")[s.tool] || s.tool);
+  const small = document.createElement("small");
+  const r = s.result || {};
+  let detail = "";
+  if (r.error) detail = r.error;
+  else if (s.tool === "examine_next_fields" && r.running) detail = `${r.examined} → ${r.running.parasites} / ${r.running.wbcs}`;
+  else if (s.tool === "review_field") detail = `${s.arguments.field_id}: ${r.usable ? "OK" : "✗"} ${(r.issues || []).join(", ")}`;
+  else if (s.tool === "exclude_field") detail = `${s.arguments.field_id}: ${s.arguments.reason}`;
+  else if (s.tool === "audit_parasites") detail = `${r.confirmed} / ${r.sampled}`;
+  small.textContent = detail;
+  li.appendChild(small);
+  return li;
+}
+
+async function pollReport() {
+  const job = await api(`/v1/sessions/${sid}/report`);
+  const list = $("steps");
+  while (list.children.length < job.steps.length) list.appendChild(stepLine(job.steps[list.children.length]));
+  if (job.state === "running") { setTimeout(pollReport, 1500); return; }
+  $("agentBusy").classList.add("hidden");
+  if (job.state === "failed") { $("notes").textContent = t("error") + job.error; $("result").classList.remove("hidden"); return; }
+  const res = job.result;
+  $("narrative").textContent = (res.narrative || "").trim();
+  $("narrativeCard").classList.toggle("hidden", !res.narrative);
+  $("reportText").textContent = res.report;
+  const audit = $("auditBox");
+  audit.textContent = res.audit_text || "";
+  audit.classList.toggle("hidden", !res.audit_text);
+  const ex = Object.entries(res.excluded || {});
+  $("excluded").replaceChildren(...ex.map(([f, why]) => { const li = document.createElement("li"); li.textContent = `${f}: ${why}`; return li; }));
+  $("excludedCard").classList.toggle("hidden", ex.length === 0);
+  $("notes").textContent = (res.notes || []).join(" ");
+  $("result").classList.remove("hidden");
+}
+
+$("finish").addEventListener("click", async () => {
+  if (fieldsKept === 0) { alert(t("noFields")); return; }
+  $("steps").replaceChildren(); $("result").classList.add("hidden"); $("agentBusy").classList.remove("hidden");
+  show("report");
+  try {
+    await api(`/v1/sessions/${sid}/report?language=${lang}`, { method: "POST" });
+    pollReport();
+  } catch (e) { $("agentBusy").classList.add("hidden"); $("notes").textContent = t("error") + e.message; $("result").classList.remove("hidden"); }
+});
+
+$("again").addEventListener("click", () => show("start"));
+applyLang();
+</script>
+</body>
+</html>

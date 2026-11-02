@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from darubini.quality import QualityThresholds, assess, stain_mask, to_gray
+from darubini.quality import QualityThresholds, assess, blocking_text, stain_mask, to_gray
 from darubini.segmentation.baseline import BaselineSegmenter
 from darubini.types import ObjectClass
 from tests.conftest import make_field
@@ -53,3 +53,43 @@ def test_baseline_counts_synthetic_objects(parasites, wbcs):
 def test_baseline_empty_field():
     blank = np.full((64, 64, 3), 220, dtype=np.uint8)
     assert BaselineSegmenter().segment(blank) == []
+
+
+def _on_eyepiece(img: np.ndarray, radius_frac: float) -> np.ndarray:
+    """Black out everything outside a centred disc, like a phone photo of an eyepiece."""
+    h, w = img.shape[:2]
+    yy, xx = np.mgrid[0:h, 0:w]
+    out = img.copy()
+    out[(xx - w / 2) ** 2 + (yy - h / 2) ** 2 > (radius_frac * w) ** 2] = 0
+    return out
+
+
+def test_eyepiece_surround_is_ignored():
+    sharp = assess(_on_eyepiece(make_field(n_parasites=10, size=512), 0.3))
+    assert sharp.usable, sharp.flags
+    assert sharp.brightness > 150  # measured on the disc, not the black surround
+    assert sharp.field_of_view < 0.5
+    assert any("field of view covers only" in f for f in sharp.flags)
+    # The disc's hard rim must not make a blurred field look sharp.
+    blurred = assess(_on_eyepiece(make_field(n_parasites=10, size=512, blur=True), 0.3))
+    assert "blocking: out of focus" in blurred.flags
+
+
+def test_all_dark_field_is_underexposed():
+    report = assess(np.zeros((64, 64, 3), dtype=np.uint8))
+    assert report.field_of_view == 0.0
+    assert "blocking: underexposed" in report.flags
+
+
+def test_blocking_text_translates_only_blocking_flags():
+    flags = [
+        "blocking: out of focus",
+        "warning: heavy staining or thick area",
+        "blocking: overexposed",
+    ]
+    assert blocking_text(flags) == ["out of focus", "too bright"]
+    assert blocking_text(flags, "sw") == [
+        "picha haijalenga vizuri (focus)",
+        "mwanga mwingi kupita kiasi",
+    ]
+    assert blocking_text(["blocking: something new"], "sw") == ["something new"]
