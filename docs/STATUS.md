@@ -324,6 +324,28 @@ Full tables: [calibration/verifier.md](calibration/verifier.md).
   - The audit is a review trigger that never let an over-count through.
   - NM-AIST failed because of scale (whole 4K frames) and an image-format confound between its folders. This is reported as is, not fixed on the test set.
 
+### 16. Write-up: README results and model card (2 Nov)
+
+- **README:**
+  - The "Evaluation plan" section is now **Results**: the test ablation and what it can and cannot do.
+  - The "IoU ≥ 0.3" claim was wrong; detections are matched by centre.
+  - The split text now says NLM by patient and UDOM by photo.
+  - The header links [HACKATHON.md](HACKATHON.md).
+- **README "How it uses Meta AI"** lists only the models the code calls, with the file for each:
+  - SAM 3.1 images (`segmentation/sam.py`);
+  - SAM 3.1 video (`tracking.py`);
+  - Muse Spark (`agent.py`, `audit.py`, `meta/reviewer.py`).
+
+  The open-weights and Muse Code rows were removed. No open-weights call exists in the code, and Muse Code was a development tool, not part of the product.
+- **MODEL_CARD.md:**
+  - The data section is now correct: 70% of UDOM is used for adaptation, and NM-AIST is test only.
+  - Added a results table.
+  - Added three limitations from the test: it is not a screen; Tanzanian smears are harder; image scale must match one oil-immersion field per photo.
+- **Mismatch for the user to settle.** [HACKATHON.md](HACKATHON.md) and the plan describe three things that are not built:
+  - Muse Voice Transcribe control;
+  - SAM 3.1 box-prompt confirmation of candidates. The API does segment marked boxes, but parasites are confirmed by the verifier;
+  - open-weights report drafting.
+
 ## Open issues
 
 1. **Parasite over-counting on some slides.** It is now flagged by the audit (step 7), not fixed. Remaining options:
@@ -349,7 +371,8 @@ Full tables: [calibration/verifier.md](calibration/verifier.md).
 
 1. **Commit the trained verifier.** `models/` is ignored by git. The demo and a fresh clone need `models/parasite_verifier.npz` (0.2 MB). Either un-ignore that one file or publish it as a release asset.
 2. **Default segmenter.** `.env` still says `baseline`. `hybrid` is the best setting with the API and `verified` the best offline.
-3. **Merge the branch.** Everything up to 2 Nov is pushed as `feat/agent-tracking-android` (4 commits) and is waiting for a pull request into `main`.
+3. **Merge the branch.** Everything up to 2 Nov, including the final test results, is pushed as `feat/agent-tracking-android` and is waiting for a pull request into `main`.
+4. **Claims in HACKATHON.md (step 16).** Either remove Muse Voice Transcribe and the SAM "two-stage box confirmation" from the "During the building period" column, or build voice before submission. Voice would be a new feature after the freeze.
 
 ## What's next
 

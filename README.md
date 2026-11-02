@@ -12,7 +12,7 @@ A phone on a microscope eyepiece, a count a microscopist can trust, a report in 
 ![Ruff](https://img.shields.io/badge/lint-ruff-2563eb)
 ![License](https://img.shields.io/badge/license-MIT-2563eb)
 
-*Darubini is Kiswahili for a magnifying scope. Built for the Meta Global AI Developer Hackathon 2026, Indie track.*
+*Darubini is Kiswahili for a magnifying scope. Built for the Meta Global AI Developer Hackathon 2026, Indie track. What was built during the event: [docs/HACKATHON.md](docs/HACKATHON.md).*
 
 </div>
 
@@ -29,7 +29,7 @@ A phone on a microscope eyepiece, a count a microscopist can trust, a report in 
 - [Architecture](#architecture)
 - [Quick start](#quick-start)
 - [Datasets](#datasets)
-- [Evaluation plan](#evaluation-plan)
+- [Results](#results)
 - [Engineering and quality](#engineering-and-quality)
 - [Project layout](#project-layout)
 - [Roadmap](#roadmap)
@@ -64,18 +64,17 @@ Status: Count complete
 Decision-support estimate only. A qualified microscopist must confirm this result before any clinical use.
 ```
 
-<sub>Example output format with illustrative numbers. Real evaluation results will appear in [docs/EVALUATION.md](docs/EVALUATION.md).</sub>
+<sub>Example output format with illustrative numbers. Test results are under [Results](#results).</sub>
 
 ## How it uses Meta AI
 
-| Meta tool | Role in Darubini | Beyond a basic call |
-| --- | --- | --- |
-| **SAM 3** (promptable concept segmentation) | Finds WBC from a text concept (F1 0.95 on NIH validation fields); tracks objects through video | Box prompts on keyframe detections, followed through an MP4 clip, so each parasite and WBC is counted once while the slide pans (`darubini track`); prompt wording and tiling tuned by a cached, cost-guarded sweep |
-| **Muse Spark** (multimodal reasoning) | Tool-calling counting agent; field quality second reader; parasite audit; bilingual narrative | Runs a whole slide unattended through five tools under guardrails (`darubini agent`); audits a random montage of 20 detections and flags slides where the count is probably inflated by platelets or debris |
-| **Meta open-weights models** (via partner inference) | Offline Kiswahili report drafting | Path to a low-connectivity clinic deployment |
-| **Muse Code** | Pair-programming during the build | Generates test scaffolds and evaluation scripts |
+| Meta model | Role in Darubini | Beyond a basic call | Called in |
+| --- | --- | --- | --- |
+| **SAM 3.1** `sam-3.1`, images | Finds WBC from the text concept "cell" (F1 0.90 on NLM test fields) | Prompt wording and tiling tuned by a cached, cost-guarded sweep | [`segmentation/sam.py`](src/darubini/segmentation/sam.py) |
+| **SAM 3.1** `sam-3.1`, video | Counts each object once across a panning clip | Box prompts on keyframe detections, followed through an MP4 clip, so each parasite and WBC is counted once while the slide pans (`darubini track`) | [`tracking.py`](src/darubini/tracking.py) |
+| **Muse Spark** `muse-spark-1.3` | Tool-calling counting agent; field quality second reader; parasite audit; bilingual narrative | Runs a whole slide unattended through five tools under guardrails (`darubini agent`). It audits a montage of 20 sampled detections and flags slides whose count is probably inflated by platelets or debris (8/8 over-counted test slides flagged) | [`agent.py`](src/darubini/agent.py), [`audit.py`](src/darubini/audit.py), [`meta/reviewer.py`](src/darubini/meta/reviewer.py) |
 
-Glimmer and any other tools announced at kickoff will be assessed on day 1 and added here if they fit.
+Not built: offline report drafting with Meta open-weights models, and voice control. Both are on the roadmap.
 
 All Meta Model API calls sit behind one adapter, [`src/darubini/meta/client.py`](src/darubini/meta/client.py), wired to `https://api.meta.ai/v1`: SAM 3.1 through the Responses API, Muse Spark through Chat Completions. SAM replies are cached on disk, so an image and prompt are never billed twice.
 
@@ -187,20 +186,37 @@ Downloads check free disk space first, resume after interruptions, verify MD5 ch
 | `colombia-ins-thick` | Colombia, INS | Thick, Romanowsky | 6,188 parasites by stage | 8 GB | large (licence check) | Stain robustness |
 | `nlm-sudan` | Sudan, U.S. NLM | Thick + thin | Expert counts, 190 patients | 49 GB | large (licence agreement) | African patient-level validation |
 
-The **training and test split is by patient**, never by image, so no patient appears on both sides. Full details, licences and citations: [`datasets/README.md`](datasets/README.md).
+NLM data is **split by patient** and UDOM data **by photo** (70% train, 30% test), so no patient or photo appears on both sides. NM-AIST is test only. The frozen lists are in [`docs/splits/`](docs/splits/). Full details, licences and citations: [`datasets/README.md`](datasets/README.md).
 
-## Evaluation plan
+## Results
 
-The headline question: **does Darubini's count agree with an expert's, on slides from Tanzania it never trained on?**
+The headline question: **does Darubini's count agree with an expert's on slides it never saw?**
 
-| Metric | Data | Why |
-| --- | --- | --- |
-| Parasite and WBC detection precision, recall, F1 (IoU ≥ 0.3) | NLM held-out patients, UDOM Tanzania | Are we finding the right objects? |
-| Count MAE, mean bias and Pearson *r* per field | UDOM Tanzania (never trained on) | Does the count track the expert? |
-| Slide-level sensitivity and specificity | NM-AIST Tanzania, NLM uninfected | Does it call positive and negative slides correctly? |
-| Ablations: baseline vs SAM 3 text vs candidates + verifier vs hybrid | All of the above | Shows exactly what each component adds |
+The protocol was written down before any test image was run. The frozen test sets were scored **once**, on 2 Nov 2026:
+- 24 infected and 7 uninfected NLM test patients;
+- 30% of the UDOM Tanzanian photos;
+- 800 NM-AIST Tanzanian images.
 
-Method and results: [`docs/EVALUATION.md`](docs/EVALUATION.md).
+Detections are matched to expert labels by centre.
+
+| Variant | Parasite F1, NLM / UDOM | WBC F1, NLM | Slide density within 2× of expert |
+| --- | --- | --- | --- |
+| Baseline (stain threshold) | 0.30 / 0.28 | 0.50 | – |
+| SAM 3.1 text prompt alone (sample) | 0.64 / 0.15 | 0.90 | – |
+| Candidates + verifier (offline) | 0.76 / 0.48 | 0.50 | 13/24 |
+| **Hybrid: SAM 3.1 WBC + candidates + verifier** | **0.80 / 0.48** | **0.90** | **19/24** (median ratio 1.02, *r* = 0.93) |
+
+- **Density is the strength.**
+  - SAM 3.1 finding white blood cells is what moves the density from a median 0.64× of the expert (offline) to 1.02×.
+  - The Muse Spark agent ran all 31 test slides unattended.
+  - Its audit flagged every slide over-counted by 1.5× or more (8/8).
+- **What it cannot do (yet).**
+  - It does not separate infected from uninfected slides. Every uninfected slide had false positives, and a count threshold gave 50% sensitivity at 86% specificity.
+  - Tanzanian UDOM smears are harder (F1 0.48).
+  - It failed on NM-AIST, whose photos are whole 4K microscope frames where parasites are a few pixels wide.
+  - Darubini is a counting instrument for slides a microscopist has read positive.
+
+Full tables with 95% intervals: [`docs/calibration/final_test.md`](docs/calibration/final_test.md). Protocol and discussion: [`docs/EVALUATION.md`](docs/EVALUATION.md).
 
 ## Engineering and quality
 
@@ -250,7 +266,7 @@ The day-by-day hackathon plan is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEME
 - [x] Counting engine, quality gate, baseline segmenter, bilingual report, API, CLI
 - [x] Wire the Meta Model API; SAM 3 prompt and tiling sweeps with a response cache
 - [x] Parasite candidates + verifier, adapted to Tanzanian (UDOM) smears on a development slice
-- [ ] Final evaluation tables on the frozen test sets
+- [x] Final evaluation tables on the frozen test sets (scored once, 2 Nov)
 - [x] Muse Spark tool-calling agent with a parasite audit; SAM 3.1 video tracking
 - [x] Phone capture web app with detection overlay, running count and live agent report
 - [x] Native Android app (Compose), styled in the Credit Design Figma language
