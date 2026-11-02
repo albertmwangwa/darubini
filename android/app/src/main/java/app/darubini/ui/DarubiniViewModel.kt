@@ -15,6 +15,7 @@ import app.darubini.data.Images
 import app.darubini.data.Next
 import app.darubini.data.ReportResult
 import app.darubini.data.Running
+import app.darubini.data.VoiceRecorder
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -48,6 +49,10 @@ data class UiState(
     val steps: List<AgentStep> = emptyList(),
     val agentRunning: Boolean = false,
     val result: ReportResult? = null,
+    val listening: Boolean = false,
+    /** Set when a spoken "next field" or "retake" should open the camera; the screen clears it. */
+    val cameraRequested: Boolean = false,
+    val voiceNotes: List<String> = emptyList(),
 ) {
     val strings: Strings get() = stringsFor(language)
 }
@@ -66,6 +71,7 @@ class DarubiniViewModel(app: Application) : AndroidViewModel(app) {
     )
     val state: StateFlow<UiState> = _state.asStateFlow()
     private var poll: Job? = null
+    private val recorder = VoiceRecorder(app)
 
     init {
         checkServer()
@@ -121,8 +127,47 @@ class DarubiniViewModel(app: Application) : AndroidViewModel(app) {
                 fieldsKept = 0,
                 steps = emptyList(),
                 result = null,
+                voiceNotes = emptyList(),
             )
         }
+    }
+
+    /** First tap starts recording; the second sends it to Muse Voice Transcribe and acts on it. */
+    fun toggleListening() {
+        if (!_state.value.listening) {
+            try {
+                recorder.start()
+                _state.update { it.copy(listening = true, message = null) }
+            } catch (e: Exception) {
+                say(s.error + (e.message ?: e.javaClass.simpleName))
+            }
+            return
+        }
+        val audio = recorder.stop()
+        _state.update { it.copy(listening = false) }
+        if (audio == null) {
+            say(s.notUnderstood(""))
+            return
+        }
+        work {
+            val sid = _state.value.sessionId ?: return@work
+            val reply = api.sendVoice(sid, audio)
+            _state.update { it.copy(voiceNotes = reply.voiceNotes) }
+            when (reply.action) {
+                "next", "retake" -> _state.update { it.copy(cameraRequested = true) }
+                "finish" -> finishAfterWork = true
+                "note" -> say(s.noteSaved(reply.note.orEmpty()))
+                else -> say(s.notUnderstood(reply.transcript))
+            }
+        }
+    }
+
+    fun cameraOpened() = _state.update { it.copy(cameraRequested = false) }
+
+    private var finishAfterWork = false
+
+    override fun onCleared() {
+        recorder.stop()?.delete()
     }
 
     fun uploadPhoto(uri: Uri) = work {
@@ -213,6 +258,10 @@ class DarubiniViewModel(app: Application) : AndroidViewModel(app) {
                 say(s.error + (e.message ?: e.javaClass.simpleName))
             } finally {
                 _state.update { it.copy(busy = false) }
+            }
+            if (finishAfterWork) {
+                finishAfterWork = false
+                finishSlide()
             }
         }
     }

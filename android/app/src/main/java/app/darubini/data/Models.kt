@@ -82,7 +82,11 @@ data class ReportResult(
     val finishedByAgent: Boolean,
     val notes: List<String>,
     val text: String,
+    val voiceNotes: List<String> = emptyList(),
 )
+
+/** What a spoken command asked for: next, finish, retake, note or none. */
+data class VoiceReply(val transcript: String, val action: String, val note: String?, val voiceNotes: List<String>)
 
 data class ReportJob(val state: String, val steps: List<AgentStep>, val result: ReportResult?, val error: String?) {
     val running: Boolean get() = state == "running"
@@ -202,8 +206,16 @@ object Parse {
             finishedByAgent = o.optBoolean("finished_by_agent"),
             notes = o.optJSONArray("notes").strings(),
             text = o.optString("text"),
+            voiceNotes = o.optJSONArray("voice_notes").strings(),
         )
     }
+
+    fun voice(o: JSONObject) = VoiceReply(
+        transcript = o.optString("transcript"),
+        action = o.optString("action", "none"),
+        note = o.optStringOrNull("note"),
+        voiceNotes = o.optJSONArray("voice_notes").strings(),
+    )
 
     private fun JSONObject.optStringOrNull(key: String): String? = if (isNull(key)) null else optString(key)
 

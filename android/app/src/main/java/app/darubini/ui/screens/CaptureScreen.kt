@@ -1,9 +1,11 @@
 package app.darubini.ui.screens
 
+import android.Manifest
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -26,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -35,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import app.darubini.R
 import app.darubini.data.Next
@@ -71,6 +75,8 @@ fun CaptureScreen(
     onPickedVideo: (Uri) -> Unit,
     onFinish: () -> Unit,
     onMessage: (String) -> Unit,
+    onVoice: () -> Unit,
+    onCameraOpened: () -> Unit,
 ) {
     val s = state.strings
     val context = LocalContext.current
@@ -109,6 +115,20 @@ fun CaptureScreen(
         clipPath = file.path
         launchSafely { recordPan.launch(uri) }
     }
+    val askMic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) onVoice() else onMessage(s.micDenied)
+    }
+    val voice = {
+        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        if (granted || state.listening) onVoice() else askMic.launch(Manifest.permission.RECORD_AUDIO)
+    }
+    // A spoken "next field" or "retake" opens the camera, as the photo button would.
+    LaunchedEffect(state.cameraRequested) {
+        if (state.cameraRequested) {
+            onCameraOpened()
+            photo()
+        }
+    }
     val r = state.running
     val done = state.next?.action == "finish"
 
@@ -120,6 +140,12 @@ fun CaptureScreen(
             s.back,
             onBack,
         ) {
+            CircleIconButton(
+                if (state.listening) R.drawable.ic_stop_circle else R.drawable.ic_mic,
+                if (state.listening) s.stopTalk else s.talk,
+                voice,
+                enabled = !state.busy,
+            )
             CircleIconButton(R.drawable.ic_photo_library, s.gallery, {
                 pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
             }, enabled = !state.busy)
@@ -154,6 +180,7 @@ fun CaptureScreen(
                     ProgressSegments(r.progress)
                 }
             }
+            if (state.listening) Notice(s.listening, s.listeningBody, Tone.Brand, R.drawable.ic_mic)
             state.next?.let { NextNotice(it, state, s) }
             LastCapture(state)
         }

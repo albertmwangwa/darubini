@@ -31,6 +31,9 @@ log = logging.getLogger(__name__)
 #: Status codes worth retrying: rate limiting and transient server errors.
 RETRY_STATUS = frozenset({429, 500, 502, 503, 504})
 
+#: SAM 3.1 rejects more than 16 prompted objects in one request.
+MAX_PROMPTED_OBJECTS = 16
+
 
 class MetaApiError(RuntimeError):
     """Raised when the Meta Model API returns an error or an unexpected payload."""
@@ -42,6 +45,7 @@ class ApiRoutes:
 
     segment: str = "/responses"
     chat: str = "/chat/completions"
+    transcribe: str = "/asr/transcribe"
 
 
 @dataclass(frozen=True)
@@ -53,6 +57,8 @@ class SegmentResult:
     score: float
     #: Raw SAM mask token (``H,W,<enc>payload``, base85); kept undecoded for now.
     mask: str | None = None
+    #: The object id in the reply; for object prompts, the id the prompt gave.
+    object_id: int = -1
 
 
 @dataclass(frozen=True)
@@ -121,26 +127,40 @@ class MetaModelClient:
         Segmentation is deterministic, so replies are cached on disk by request body
         when ``cache_dir`` is set; a repeated image and prompt is never billed twice.
         """
-        image_url = "data:image/jpeg;base64," + base64.b64encode(image_jpeg).decode("ascii")
         results: list[SegmentResult] = []
         for concept in concepts:
-            payload = {
-                "model": model,
-                "metadata": {"include_confidence": "true", "mask_encoding": "one_bit"},
-                "input": [
-                    {
-                        "type": "message",
-                        "role": "user",
-                        "content": [
-                            {"type": "input_text", "text": concept},
-                            {"type": "input_image", "image_url": image_url},
-                        ],
-                    }
-                ],
-            }
-            data = self._post_cached(self.routes.segment, payload)
+            data = self._post_cached(
+                self.routes.segment, _image_payload(model, concept, image_jpeg)
+            )
             results.extend(_to_segment_results(data, concept))
         return results
+
+    def segment_objects(
+        self,
+        image_jpeg: bytes,
+        boxes: list[tuple[int, int, int, int]],
+        size: tuple[int, int],
+        model: str,
+    ) -> dict[int, SegmentResult]:
+        """Segment the objects marked by box prompts, keyed by their index in ``boxes``.
+
+        ``boxes`` are inclusive pixel corners ``(x1, y1, x2, y2)`` in an image of
+        ``size`` (width, height). SAM 3.1 takes at most 16 objects per request and
+        returns a confidence for each one it finds; an index missing from the result
+        is an object SAM did not segment. Cached like :meth:`segment_concepts`.
+        """
+        if not 0 < len(boxes) <= MAX_PROMPTED_OBJECTS:
+            raise ValueError(f"between 1 and {MAX_PROMPTED_OBJECTS} boxes per request")
+        w, h = size
+        tokens = []
+        for i, (x1, y1, x2, y2) in enumerate(boxes):
+            # SAM rejects corners outside the image, and x2 == w.
+            x1, y1 = min(max(0, x1), w - 2), min(max(0, y1), h - 2)
+            x2, y2 = max(min(w - 1, x2), x1 + 1), max(min(h - 1, y2), y1 + 1)
+            tokens.append(f"{i}<|box;x1={x1};y1={y1};x2={x2};y2={y2};w={w};h={h}|>")
+        prompt = "<0f>" + ",".join(tokens)
+        data = self._post_cached(self.routes.segment, _image_payload(model, prompt, image_jpeg))
+        return {r.object_id: r for r in _to_segment_results(data, "object")}
 
     def segment_video(
         self, video_mp4: bytes, prompt: str, model: str, metadata: dict[str, str] | None = None
@@ -213,6 +233,35 @@ class MetaModelClient:
             raise MetaApiError("unexpected chat payload: message is not an object")
         return message
 
+    # ---- Muse Voice Transcribe: speech to text ----
+
+    def transcribe(
+        self,
+        wav: bytes,
+        model: str,
+        keywords: list[str] | None = None,
+        language_bias: list[str] | None = None,
+    ) -> str:
+        """Transcribe one push-to-talk recording (mono 16-bit PCM WAV, 16 or 24 kHz).
+
+        ``keywords`` bias the recogniser towards a vocabulary; ``language_bias`` names
+        likely languages (a hint only). Not cached: every recording is new.
+        """
+        request: dict[str, Any] = {"model": model, "audioEncoding": "WAV", "mode": "PUSH_TO_TALK"}
+        if keywords:
+            request["keywords"] = keywords
+        if language_bias:
+            request["languageBias"] = language_bias
+        files = {
+            "request": (None, json.dumps(request), "application/json"),
+            "audio": ("speech.wav", wav, "audio/wav"),
+        }
+        data = self._post(self.routes.transcribe, files=files)
+        transcript = data.get("transcript")
+        if not isinstance(transcript, str):
+            raise MetaApiError("unexpected transcription payload: no transcript")
+        return transcript
+
     def _post_cached(self, route: str, payload: dict[str, Any]) -> dict[str, Any]:
         if self.cache_dir is None:
             self.billed_requests += 1
@@ -230,11 +279,16 @@ class MetaModelClient:
         tmp.replace(path)
         return data
 
-    def _post(self, route: str, payload: dict[str, Any]) -> dict[str, Any]:
+    def _post(
+        self, route: str, payload: dict[str, Any] | None = None, files: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         for attempt in range(self.retries + 1):
             wait = self.backoff_s * 2**attempt
             try:
-                response = self._http.post(route, json=payload)
+                if files is None:
+                    response = self._http.post(route, json=payload)
+                else:
+                    response = self._http.post(route, files=files)
             except httpx.TransportError as exc:
                 if attempt < self.retries:
                     log.warning("%s failed (%s); retrying in %.0fs", route, exc, wait)
@@ -266,6 +320,25 @@ _RECORD = re.compile(
 
 
 _FRAME = re.compile(r"^<(?P<frame>\d+)f>")
+
+
+def _image_payload(model: str, text: str, image_jpeg: bytes) -> dict[str, Any]:
+    """Build a SAM 3.1 image request: a concept or object prompts, with confidences."""
+    image_url = "data:image/jpeg;base64," + base64.b64encode(image_jpeg).decode("ascii")
+    return {
+        "model": model,
+        "metadata": {"include_confidence": "true", "mask_encoding": "one_bit"},
+        "input": [
+            {
+                "type": "message",
+                "role": "user",
+                "content": [
+                    {"type": "input_text", "text": text},
+                    {"type": "input_image", "image_url": image_url},
+                ],
+            }
+        ],
+    }
 
 
 def _output_text(data: dict[str, Any]) -> str:
@@ -314,6 +387,7 @@ def _to_segment_results(data: dict[str, Any], concept: str) -> list[SegmentResul
                     box_xyxy=box,
                     score=score,
                     mask=mask.split("data=", 1)[1] if mask and "data=" in mask else None,
+                    object_id=int(m["id"]),
                 )
             )
         return results

@@ -8,10 +8,14 @@ import logging
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from darubini.config import get_settings
 from darubini.segmentation.base import SEGMENTERS
 from darubini.types import ObjectClass
+
+if TYPE_CHECKING:
+    from darubini.counting import SlideCount
 
 
 def _cmd_datasets(args: argparse.Namespace) -> int:
@@ -431,12 +435,50 @@ def _cmd_analyse(args: argparse.Namespace) -> int:
 
     pipeline = Pipeline(segmenter=get_segmenter(get_settings()))
     images = ((p.name, load_image(p)) for p in args.images)
-    fields, _count, report = pipeline.analyse_slide(images, language=args.language)
+    fields, count, report = pipeline.analyse_slide(images, language=args.language)
+    narrative = _narrate(count, report.facts, args.language, args.narrate)
     if args.json:
-        print(json.dumps({"slide": report.facts, "fields": len(fields)}, indent=2))
+        out = {"slide": report.facts, "fields": len(fields), "narrative": narrative}
+        print(json.dumps(out, indent=2))
     else:
         print(report.text)
+        if narrative:
+            print()
+            print(narrative)
     return 0
+
+
+def _narrate(count: SlideCount, facts: dict[str, Any], language: str, source: str) -> str | None:
+    """Draft a narrative with Muse Spark or Muse Spark Open, or None.
+
+    The narrative is dropped when it quotes a number the count did not produce.
+    """
+    from darubini.agent import _numbers_in, unsupported_numbers
+    from darubini.meta.client import MetaApiError, MetaModelClient
+    from darubini.meta.reviewer import MuseReviewer
+
+    if source == "none":
+        return None
+    s = get_settings()
+    try:
+        if source == "open":
+            if not s.open_weights_enabled:
+                print("note: set OPEN_WEIGHTS_BASE_URL to draft with Muse Spark Open")
+                return None
+            key = s.open_weights_api_key.get_secret_value() if s.open_weights_api_key else "none"
+            client = MetaModelClient(str(s.open_weights_base_url), key, timeout_s=180.0)
+            model = s.open_weights_model
+        else:
+            client, model = MetaModelClient.from_settings(s), s.meta_reasoning_model
+        text = MuseReviewer(client, model).draft_report(count, language)
+    except MetaApiError as exc:
+        print(f"note: narrative skipped ({exc})")
+        return None
+    bad = unsupported_numbers(text, _numbers_in(facts))
+    if bad:
+        print(f"note: narrative dropped; it quoted numbers the count did not produce: {bad}")
+        return None
+    return text.strip()
 
 
 IMAGE_SUFFIXES = (".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp")
@@ -709,6 +751,12 @@ def build_parser() -> argparse.ArgumentParser:
     an.add_argument("images", nargs="+", type=Path)
     an.add_argument("--language", choices=["en", "sw"], default="en")
     an.add_argument("--json", action="store_true")
+    an.add_argument(
+        "--narrate",
+        choices=["none", "muse", "open"],
+        default="none",
+        help="draft a narrative with Muse Spark (API) or Muse Spark Open (OPEN_WEIGHTS_BASE_URL)",
+    )
     an.set_defaults(func=_cmd_analyse)
 
     ag = sub.add_parser("agent", help="count a slide with the Muse Spark agent")

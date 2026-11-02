@@ -57,6 +57,10 @@ fun ReportScreen(state: UiState, padding: PaddingValues, onClose: () -> Unit, on
                     CaptureRow(R.drawable.ic_block, field, why, tone = Tone.Neutral)
                 }
             }
+            if (result.voiceNotes.isNotEmpty()) {
+                SectionHeader(s.voiceNotes)
+                result.voiceNotes.forEach { CaptureRow(R.drawable.ic_mic, it, null, tone = Tone.Neutral) }
+            }
             FullReport(state, result)
             Disclaimer(s.disclaimer)
         }

@@ -32,6 +32,7 @@ from darubini.report import render
 from darubini.tracking import ClipCount, Track, Tracker, count_clip
 from darubini.types import Detection, FieldResult, ObjectClass
 from darubini.video import Frame, resize_to
+from darubini.voice import VoiceCommand
 
 #: Long side kept for each captured field; enough for the quality reviewer.
 STORED_SIDE = 1024
@@ -59,6 +60,8 @@ class CaptureSession:
     session_id: str
     created: float
     fields: list[tuple[str, CapturedField]] = field(default_factory=list)
+    #: Observations the technician spoke ("note ..."), in order.
+    voice_notes: list[str] = field(default_factory=list)
     job: ReportJob = field(default_factory=ReportJob)
     lock: threading.Lock = field(default_factory=threading.Lock)
 
@@ -220,6 +223,20 @@ def add_clip(
     }
 
 
+def add_voice(session: CaptureSession, command: VoiceCommand) -> dict[str, Any]:
+    """Record a spoken note; every command is echoed back for the phone to act on."""
+    with session.lock:
+        if command.action == "note" and command.note:
+            session.voice_notes.append(command.note)
+        notes = list(session.voice_notes)
+    return {
+        "transcript": command.transcript,
+        "action": command.action,
+        "note": command.note,
+        "voice_notes": notes,
+    }
+
+
 def result_json(result: AgentResult) -> dict[str, Any]:
     """Convert an agent result to plain JSON for the report screen."""
     language = result.report.language
@@ -266,6 +283,7 @@ def start_report(
             return session.job
         job = session.job = ReportJob(state="running")
         fields = list(session.fields)
+        voice_notes = list(session.voice_notes)
 
     if client is None:
         count = evaluate_slide([c.result for _, c in fields], pipeline.protocol)
@@ -281,6 +299,7 @@ def start_report(
             "finished_by_agent": False,
             "notes": ["Muse Spark is not configured; deterministic report only"],
             "text": report.text,
+            "voice_notes": voice_notes,
         }
         job.state = "done"
         return job
@@ -296,7 +315,7 @@ def start_report(
     def work() -> None:
         try:
             result = agent.run(slide, language, on_step=lambda s: job.steps.append(step_json(s)))
-            job.result = result_json(result)
+            job.result = {**result_json(result), "voice_notes": voice_notes}
             job.state = "done"
         except Exception as exc:  # surfaced to the phone, never raised
             job.error = str(exc)

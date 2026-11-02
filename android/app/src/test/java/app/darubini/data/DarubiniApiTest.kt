@@ -161,6 +161,27 @@ class DarubiniApiTest {
     }
 
     @Test
+    fun voiceUploadsAudioAndParsesTheCommand() = runTest {
+        reply(200, """{"transcript": "note, pale stain", "action": "note", "note": "pale stain", "voice_notes": ["pale stain"]}""")
+        val audio = kotlin.io.path.createTempFile(suffix = ".m4a").toFile().apply { writeBytes(byteArrayOf(1, 2, 3)) }
+        val voice = api().sendVoice("abc", audio)
+        val request = server.takeRequest()
+        assertEquals("/v1/sessions/abc/voice", request.url.encodedPath)
+        assertTrue(request.body!!.utf8().contains("Content-Type: audio/mp4"))
+        assertEquals("note", voice.action)
+        assertEquals("pale stain", voice.note)
+        assertEquals(listOf("pale stain"), voice.voiceNotes)
+        audio.delete()
+    }
+
+    @Test
+    fun reportCarriesVoiceNotes() {
+        val r = Parse.result(org.json.JSONObject("""{"slide": {}, "voice_notes": ["thick smear"]}"""))
+        assertEquals(listOf("thick smear"), r.voiceNotes)
+        assertEquals(emptyList<String>(), Parse.result(org.json.JSONObject("""{"slide": {}}""")).voiceNotes)
+    }
+
+    @Test
     fun health() = runTest {
         reply(200, """{"status": "ok", "version": "0.4.0", "segmenter": "hybrid"}""")
         assertTrue(api().health())

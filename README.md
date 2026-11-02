@@ -71,10 +71,13 @@ Decision-support estimate only. A qualified microscopist must confirm this resul
 | Meta model | Role in Darubini | Beyond a basic call | Called in |
 | --- | --- | --- | --- |
 | **SAM 3.1** `sam-3.1`, images | Finds WBC from the text concept "cell" (F1 0.90 on NLM test fields) | Prompt wording and tiling tuned by a cached, cost-guarded sweep | [`segmentation/sam.py`](src/darubini/segmentation/sam.py) |
-| **SAM 3.1** `sam-3.1`, video | Counts each object once across a panning clip | Box prompts on keyframe detections, followed through an MP4 clip, so each parasite and WBC is counted once while the slide pans (`darubini track`) | [`tracking.py`](src/darubini/tracking.py) |
+| **SAM 3.1** `sam-3.1`, box prompts | Two-stage detection: confirms each parasite candidate (segmenter `confirmed`) | Our detector proposes, SAM 3.1 confirms 16 boxes per request with a confidence each; measured honestly on development data ([two_stage.md](docs/calibration/two_stage.md)) | [`segmentation/confirm.py`](src/darubini/segmentation/confirm.py) |
+| **SAM 3.1** `sam-3.1`, video | Counts each object once across a panning clip | Box prompts on keyframe detections, followed through an MP4 clip, so each parasite and WBC is counted once while the slide pans (`darubini track`; [demo clip](docs/demo/tracking_demo.mp4)) | [`tracking.py`](src/darubini/tracking.py) |
 | **Muse Spark** `muse-spark-1.3` | Tool-calling counting agent; field quality second reader; parasite audit; bilingual narrative | Runs a whole slide unattended through five tools under guardrails (`darubini agent`). It audits a montage of 20 sampled detections and flags slides whose count is probably inflated by platelets or debris (8/8 over-counted test slides flagged) | [`agent.py`](src/darubini/agent.py), [`audit.py`](src/darubini/audit.py), [`meta/reviewer.py`](src/darubini/meta/reviewer.py) |
+| **Muse Voice Transcribe** `muse-voice-transcribe-1.0` | Hands-free capture: "next field", "retake", "finish", "note …" | The phone records whatever its codec gives; the server converts it to 16 kHz WAV, biases recognition to the command vocabulary, and spoken notes travel into the report | [`voice.py`](src/darubini/voice.py), [`api/app.py`](src/darubini/api/app.py) |
+| **Muse Spark Open** (open weights) | Report narrative from a self-hosted or partner-hosted model, for clinics off the Meta API | Any OpenAI-compatible host (Baseten, Fireworks, Together, a local vLLM server) through the same client; numbers it invents are rejected | [`cli.py`](src/darubini/cli.py) (`darubini analyse --narrate open`) |
 
-Not built: offline report drafting with Meta open-weights models, and voice control. Both are on the roadmap.
+Kiswahili voice commands are matched, but Kiswahili is not on Muse Voice Transcribe's published language list and has not been confirmed with a native speaker. Muse Spark Open is wired and tested against a mock host only; no partner key was available.
 
 All Meta Model API calls sit behind one adapter, [`src/darubini/meta/client.py`](src/darubini/meta/client.py), wired to `https://api.meta.ai/v1`: SAM 3.1 through the Responses API, Muse Spark through Chat Completions. SAM replies are cached on disk, so an image and prompt are never billed twice.
 
@@ -107,6 +110,7 @@ flowchart LR
 | `darubini.report` | Deterministic English and Kiswahili reports (the source of truth for numbers) |
 | `darubini.meta` | Meta Model API client (SAM 3.1 images and video, Muse Spark chat and tool calls) and the Muse Spark reviewer |
 | `darubini.agent`, `darubini.audit` | Muse Spark counting agent with guardrails; second-reader audit of parasite detections |
+| `darubini.voice` | Voice commands: any recorded audio to 16 kHz WAV, Muse Voice Transcribe, command and note parsing in English and Kiswahili |
 | `darubini.tracking`, `darubini.video` | Count each object once across a panning clip (SAM 3.1 video or offline shift tracker); MP4 encode/decode with PyAV |
 | `darubini.data` | Dataset manifest, resumable checksum-verified downloads, annotation parsers |
 | `darubini.evaluation` | Detection precision/recall/F1 (centre or IoU matching), count MAE and bias, slide sensitivity/specificity |
@@ -270,6 +274,7 @@ The day-by-day hackathon plan is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEME
 - [x] Muse Spark tool-calling agent with a parasite audit; SAM 3.1 video tracking
 - [x] Phone capture web app with detection overlay, running count and live agent report
 - [x] Native Android app (Compose), styled in the Credit Design Figma language
+- [x] Voice commands (Muse Voice Transcribe), two-stage SAM 3.1 box confirmation, Muse Spark Open narratives
 - [ ] Live demo on a real microscope in Dar es Salaam; 3-minute video
 
 ## Responsible AI

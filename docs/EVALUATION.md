@@ -98,6 +98,19 @@ Final test sets, scored once on 2 Nov 2026. F1 is given as NIH / UDOM. Count MAE
 | Hybrid + Muse Spark agent (QC review, exclusions) | density within ±25% of expert on 10/24 slides; excluded 19 of 299 fields | | | | |
 | Hybrid + Muse Spark audit flag (slide-level) | flags 8/8 slides over-counted ≥1.5×, 5/16 slides counted within 1.5× and 7/7 uninfected slides | | | | |
 
+**Two-stage detection (development data, after the test run).** SAM 3.1 box prompts confirming each parasite candidate were measured on 20 NIH val fields and 150 UDOM `check` tiles ([calibration/two_stage.md](calibration/two_stage.md)); they are not test results.
+
+| Rule | NIH val F1 | UDOM check F1 |
+| --- | ---: | ---: |
+| Candidates alone | 0.29 | 0.17 |
+| Candidates + SAM 3.1 box confirmation | 0.41 | 0.35 |
+| Candidates + verifier | 0.84 | 0.43 |
+| Candidates + verifier + SAM 3.1 box confirmation | 0.85 | 0.43 |
+
+- SAM's confirmation filters candidates well beyond raw candidates and beyond SAM's text prompt alone (test F1 0.64 / 0.15).
+- After the verifier it adds almost nothing (+0.01 on NIH, with its threshold chosen on the same fields; nothing on UDOM). SAM segments 99 to 100% of candidates: it confirms that an object is there, not that it is a parasite.
+- `confirmed` is therefore an optional segmenter; `hybrid` stays the default with the API.
+
 ### What the test results say
 
 - **Parasite detection holds up on NIH.** On held-out patients the hybrid mode gets F1 0.80 against 0.78 to 0.81 in development. Its parasite count is nearly unbiased (−1.5 per field).

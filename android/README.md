@@ -55,6 +55,7 @@ Versions:
    - **Photograph field** uses the phone's camera app.
    - **Record a pan** records up to 8 s of video.
    - The gallery button in the top bar sends an existing photo or clip.
+   - The microphone button takes voice commands through Muse Voice Transcribe: tap, say "next field", "retake", "finish" or "note" and what you see, then tap again. Spoken notes appear on the report.
 4. Tap **Finish slide** when the banner says the count is complete.
 
 Notes:

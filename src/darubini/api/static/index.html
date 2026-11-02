@@ -115,6 +115,8 @@
       <label class="btn primary" for="photo"><span data-t="photo"></span></label>
       <label class="btn" for="clip"><span data-t="clip"></span></label>
     </div>
+    <button class="btn" id="talk" data-t="talk"></button>
+    <p class="muted" id="heard"></p>
     <input id="photo" type="file" accept="image/*" capture="environment">
     <input id="clip" type="file" accept="video/*" capture="environment">
     <div id="busy" class="card hidden"><div class="row" style="align-items:center"><div class="spinner" style="flex:0 0 18px"></div><span data-t="analysing"></span></div></div>
@@ -168,7 +170,10 @@ const T = {
     tools: { examine_next_fields: "Examined fields", review_field: "Second opinion on image quality",
       exclude_field: "Excluded a field", audit_parasites: "Audited a sample of parasites",
       get_count: "Checked the count", finish: "Wrote the report" },
-    disclaimer: "Decision support only. A qualified microscopist must confirm every result."
+    disclaimer: "Decision support only. A qualified microscopist must confirm every result.",
+    talk: "Speak a command", stopTalk: "Listening… tap to send",
+    noteSaved: n => `Note saved: ${n}`, notUnderstood: h => h ? `Heard "${h}": not a command. Say "next field", "retake", "finish" or "note …".` : "Nothing heard. Try again.",
+    voiceNotes: "Spoken notes: "
   },
   sw: {
     welcome: "Hesabu filamu nene ya damu", begin: "Anza slaidi mpya",
@@ -186,7 +191,10 @@ const T = {
     tools: { examine_next_fields: "Imechunguza sehemu", review_field: "Maoni ya pili kuhusu ubora wa picha",
       exclude_field: "Imeondoa sehemu", audit_parasites: "Imekagua sampuli ya vimelea",
       get_count: "Imeangalia hesabu", finish: "Imeandika ripoti" },
-    disclaimer: "Msaada wa kufanya uamuzi tu. Mtaalamu wa hadubini aliyehitimu lazima athibitishe kila matokeo."
+    disclaimer: "Msaada wa kufanya uamuzi tu. Mtaalamu wa hadubini aliyehitimu lazima athibitishe kila matokeo.",
+    talk: "Toa amri kwa sauti", stopTalk: "Inasikiliza… gusa kutuma",
+    noteSaved: n => `Kumbukumbu imehifadhiwa: ${n}`, notUnderstood: h => h ? `Imesikika "${h}": si amri. Sema "sehemu inayofuata", "piga tena", "maliza" au "kumbuka …".` : "Hakuna kilichosikika. Jaribu tena.",
+    voiceNotes: "Kumbukumbu za sauti: "
   }
 };
 const UPLOAD_SIDE = 2048;
@@ -357,7 +365,8 @@ async function pollReport() {
   const ex = Object.entries(res.excluded || {});
   $("excluded").replaceChildren(...ex.map(([f, why]) => { const li = document.createElement("li"); li.textContent = `${f}: ${why}`; return li; }));
   $("excludedCard").classList.toggle("hidden", ex.length === 0);
-  $("notes").textContent = (res.notes || []).join(" ");
+  const spoken = res.voice_notes || [];
+  $("notes").textContent = (res.notes || []).join(" ") + (spoken.length ? " " + t("voiceNotes") + spoken.join("; ") : "");
   $("result").classList.remove("hidden");
 }
 
@@ -369,6 +378,37 @@ $("finish").addEventListener("click", async () => {
     await api(`/v1/sessions/${sid}/report?language=${lang}`, { method: "POST" });
     pollReport();
   } catch (e) { $("agentBusy").classList.add("hidden"); $("notes").textContent = t("error") + e.message; $("result").classList.remove("hidden"); }
+});
+
+// Voice: tap to record, tap again to send to Muse Voice Transcribe, then act on the command.
+let recorder = null;
+$("talk").addEventListener("click", async () => {
+  if (recorder) { recorder.stop(); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch (e) { $("heard").textContent = t("error") + e.message; return; }
+  const chunks = [];
+  recorder = new MediaRecorder(stream);
+  recorder.ondataavailable = ev => chunks.push(ev.data);
+  recorder.onstop = async () => {
+    stream.getTracks().forEach(tr => tr.stop());
+    recorder = null; $("talk").textContent = t("talk");
+    const type = chunks[0]?.type || "audio/webm";
+    const form = new FormData();
+    form.append("file", new Blob(chunks, { type }), type.includes("mp4") ? "voice.m4a" : "voice.webm");
+    setBusy(true);
+    try {
+      const v = await api(`/v1/sessions/${sid}/voice`, { method: "POST", body: form });
+      if (v.action === "note") $("heard").textContent = t("noteSaved")(v.note);
+      else if (v.action === "finish") { $("heard").textContent = ""; setBusy(false); $("finish").click(); }
+      // Browsers may block opening the camera this long after the tap; the button still works.
+      else if (v.action === "next" || v.action === "retake") { $("heard").textContent = v.transcript; setBusy(false); $("photo").click(); }
+      else $("heard").textContent = t("notUnderstood")(v.transcript);
+    } catch (e) { $("heard").textContent = t("error") + e.message; }
+    finally { setBusy(false); }
+  };
+  recorder.start();
+  $("talk").textContent = t("stopTalk");
 });
 
 $("again").addEventListener("click", () => show("start"));

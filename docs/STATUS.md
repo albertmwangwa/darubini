@@ -17,7 +17,7 @@ The audit catches a serious problem found today, over-counting on sparse slides,
 - **SAM 3 finds white blood cells reliably:** F1 0.95 on NIH tuning fields.
 - **Parasites are no longer found by SAM.** The API cannot do exemplar prompting (tested), and a free offline detector finds far more parasites than SAM does.
 - **The full pipeline runs end to end** in the new `hybrid` mode (SAM for white blood cells, our verifier for parasites) and in the offline `verified` mode.
-- About **US$18** of the US$150 API credit has been spent (about 7,200 SAM requests, most of them in the final test run).
+- About **US$21** of the US$150 API credit has been spent (about 8,200 SAM requests, most of them in the final test run; voice tests cost cents).
 - **Final test results (2 Nov):**
   - On held-out NIH patients: parasite F1 0.80, and density within 2× of the expert on 19 of 24 slides.
   - On UDOM test: parasite F1 0.48.
@@ -365,6 +365,31 @@ Full tables: [calibration/verifier.md](calibration/verifier.md).
   - White cells: SAM's "cell" prompt splits some lobed white cells into two or three boxes. That explains most of the 10 white-cell tracks matching no label. It is a detection error, visible in the clip at #24 to #26.
 - **Done when** (What's next row 2): met for a synthetic pan. Real phone video is still untested.
 
+### 18. Completing the plan: two-stage detection, voice, open weights (2 Nov, evening)
+
+The user asked to complete the implementation plan. Three Meta-tooling items were unbuilt; the API was read from Meta's docs first (voice API reference, SAM segmenting, Muse Spark Open deploy pages).
+
+- **Two-stage detection (plan day 3).**
+  - `MetaModelClient.segment_objects` sends up to 16 box prompts per request with `include_confidence`; corners are clamped (SAM rejects negatives, 400). `segmentation/confirm.py`: `BoxConfirmer` (1,024 px tiles) and `ConfirmedSegmenter` (segmenter `confirmed`: hybrid, then SAM confirms each kept parasite at *c* ≥ 0.70).
+  - **Development check** (`scripts/two_stage.py`, [calibration/two_stage.md](calibration/two_stage.md)), 20 NIH val fields and 150 UDOM `check` tiles, 986 SAM requests (about US$2.50):
+
+    | Rule | NIH val F1 | UDOM check F1 |
+    | --- | ---: | ---: |
+    | Candidates alone | 0.29 | 0.17 |
+    | Candidates + SAM box confirmation | 0.41 | 0.35 |
+    | Candidates + verifier | 0.84 | 0.43 |
+    | Candidates + verifier + SAM box confirmation | 0.85 | 0.43 |
+
+  - **Gate "two-stage beats either alone":** met against candidates alone and SAM's text prompt alone; not meaningfully against our verifier. SAM segments 99 to 100% of candidates with confidence 0.55 to 0.82: it confirms objectness, not parasites. `hybrid` stays the default.
+- **Muse Voice Transcribe (plan day 5).**
+  - `client.transcribe` (multipart `POST /asr/transcribe`, `muse-voice-transcribe-1.0`, keyword biasing); `voice.py` converts any audio PyAV reads to 16 kHz mono WAV and parses commands: next field, retake, finish, and "note …" (English and Kiswahili phrases).
+  - `POST /v1/sessions/{id}/voice`; spoken notes are kept on the session and returned with the report as `voice_notes`.
+  - **Live check:** synthetic English speech (Windows voice) gave exact transcripts for all four commands, through WAV and through AAC/M4A as the Android app records. **Kiswahili is not on the API's 25-language list**: an English voice reading "Sehemu inayofuata" came back as "See how many of weda" (with or without a Swahili language hint). Kiswahili voice is unconfirmed until a native speaker tries it.
+  - **Android:** a microphone button on Capture (tap to record, tap to send; RECORD_AUDIO asked at first use). "Next field" and "retake" open the camera, "finish" finishes the slide, notes show in a snackbar and on the Report screen. Builds and unit tests pass (13). **Checked on the emulator:** the permission prompt, the listening state ([screenshot](calibration/android_voice.png)), and a recording sent end to end; the emulator has no audio input, so the reply was "nothing heard". A spoken command on a real phone is still to do.
+  - **Web page:** the same button with `MediaRecorder`. A browser may refuse to open the camera this long after the tap; the photo button still works.
+- **Muse Spark Open (open weights).** `OPEN_WEIGHTS_BASE_URL` / `OPEN_WEIGHTS_API_KEY` / `OPEN_WEIGHTS_MODEL` (default `meta-models/muse-spark-open`) and `darubini analyse --narrate open|muse`. The narrative is dropped if it quotes a number the count did not produce. **Not run live: no Baseten, Fireworks or Modal key.**
+- Checks: 218 Python tests (97% coverage), ruff, mypy strict; Android unit tests and debug build.
+
 ## Open issues
 
 1. **Parasite over-counting on some slides.** It is now flagged by the audit (step 7), not fixed. Remaining options:
@@ -391,7 +416,7 @@ Full tables: [calibration/verifier.md](calibration/verifier.md).
 1. **Commit the trained verifier.** `models/` is ignored by git. The demo and a fresh clone need `models/parasite_verifier.npz` (0.2 MB). Either un-ignore that one file or publish it as a release asset.
 2. **Default segmenter.** `.env` still says `baseline`. `hybrid` is the best setting with the API and `verified` the best offline.
 3. **Merge the branch.** Everything up to 2 Nov, including the final test results, is pushed as `feat/agent-tracking-android` and is waiting for a pull request into `main`.
-4. **Claims in HACKATHON.md (step 16).** Either remove Muse Voice Transcribe and the SAM "two-stage box confirmation" from the "During the building period" column, or build voice before submission. Voice would be a new feature after the freeze.
+4. ~~Claims in HACKATHON.md~~ Resolved 2 Nov (step 18): voice and two-stage box confirmation are now built. Remaining caveats for the write-up: two-stage adds little over the verifier, Kiswahili voice is unconfirmed, and Muse Spark Open has not run against a real host (a partner key would close this).
 
 ## What's next
 
