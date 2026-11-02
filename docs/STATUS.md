@@ -346,6 +346,25 @@ Full tables: [calibration/verifier.md](calibration/verifier.md).
   - SAM 3.1 box-prompt confirmation of candidates. The API does segment marked boxes, but parasites are confirmed by the verifier;
   - open-weights report drafting.
 
+### 17. Tracking demo clip (2 Nov)
+
+- **What it is.** `scripts/tracking_demo.py` pans 90 frames across one NIH **tuning** field (TF54_CW43), never a test field. It counts the field in hybrid mode with SAM 3.1 video tracking.
+- **Outputs**, all in [`demo/`](demo/):
+  - [`tracking_demo.mp4`](demo/tracking_demo.mp4), 0.3 MB: each track boxed and numbered, with the running count of unique objects and a closing summary;
+  - [`tracking_contact.png`](demo/tracking_contact.png): six frames from the clip;
+  - [`tracking_demo.json`](demo/tracking_demo.json): the counts and the label check.
+- **Counts.** 12 unique parasites and 17 white cells, against 31 and 34 counted frame by frame. SAM 3.1 video cost US$0.08. The offline shift tracker gives the same counts.
+- **Duplicates checked against the expert labels** (automatic, instead of by hand):
+
+  | Duplicates | Parasites | White cells |
+  | --- | ---: | ---: |
+  | Across frames (tracking failures) | 0 | 0 |
+  | Within one frame (detector boxed one object twice) | 2 | 1 |
+
+  - Parasites: 9 of the 10 labelled in view were found, plus 1 track matching no label.
+  - White cells: SAM's "cell" prompt splits some lobed white cells into two or three boxes. That explains most of the 10 white-cell tracks matching no label. It is a detection error, visible in the clip at #24 to #26.
+- **Done when** (What's next row 2): met for a synthetic pan. Real phone video is still untested.
+
 ## Open issues
 
 1. **Parasite over-counting on some slides.** It is now flagged by the audit (step 7), not fixed. Remaining options:
@@ -379,7 +398,7 @@ Full tables: [calibration/verifier.md](calibration/verifier.md).
 | Priority | Task | Done when |
 | --- | --- | --- |
 | 1 | Install the Android app on a real phone and count a slide over Wi-Fi (photos from the datasets on screen are fine without a microscope) | A slide captured and reported from the phone |
-| 2 | Real panning video for tracking: any phone clip of a slide, or a pan synthesised from a full NIH field (`darubini track --synthetic`) | Tracking demo clip recorded; duplicates checked by hand |
+| 2 | Real panning video for tracking (a phone clip of a slide). The synthetic-pan demo clip is done (step 17) | Real clip tracked; duplicates checked against step 17 |
 | 3 | Improve UDOM parasite F1 (0.44 on the larger check half) | F1 on the `check` half clearly above 0.44 |
 | Done | ~~Final test-set run~~ (2 Nov, step 15) | Ablation table in EVALUATION.md filled |
 | Done | ~~Muse Spark agent~~, ~~SAM tracking~~, ~~phone capture app~~, ~~native Android app~~, ~~localised quality flags~~, ~~audit repeatability~~, ~~train/test split~~, ~~Figma restyle~~ | 30 Oct-2 Nov |

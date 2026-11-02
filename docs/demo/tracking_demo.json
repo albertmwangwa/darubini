@@ -1,0 +1,32 @@
+{
+  "field": "TF54_CW43/20170812_174130.jpg",
+  "split": "tune",
+  "frames": 90,
+  "keyframes": 10,
+  "tracker": "sam3-video",
+  "unique_parasites": 12,
+  "unique_wbcs": 17,
+  "naive_parasites": 31,
+  "naive_wbcs": 34,
+  "against_labels": {
+    "parasite": {
+      "labelled_in_view": 10,
+      "tracks": 12,
+      "matched_labels": 9,
+      "duplicates_across_frames": 0,
+      "duplicates_within_a_frame": 2,
+      "unmatched_tracks": 1,
+      "missed_labels": 1
+    },
+    "white_blood_cell": {
+      "labelled_in_view": 11,
+      "tracks": 17,
+      "matched_labels": 6,
+      "duplicates_across_frames": 0,
+      "duplicates_within_a_frame": 1,
+      "unmatched_tracks": 10,
+      "missed_labels": 5
+    }
+  },
+  "sam_usd": 0.078
+}
