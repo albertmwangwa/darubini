@@ -6,7 +6,7 @@ import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from darubini.types import Detection, ObjectClass
+from darubini.types import BoundingBox, Detection, ObjectClass
 
 
 @dataclass(frozen=True)
@@ -58,6 +58,41 @@ def match_detections(
             iou = p.box.iou(g.box)
             if iou >= best_iou:
                 best, best_iou = i, iou
+        if best >= 0:
+            used[best] = True
+            tp += 1
+    return DetectionScore(tp, len(preds) - tp, len(gts) - tp)
+
+
+def _contains(box: BoundingBox, x: float, y: float) -> bool:
+    return box.x_min <= x <= box.x_max and box.y_min <= y <= box.y_max
+
+
+def match_centres(
+    predicted: Sequence[Detection], truth: Sequence[Detection], cls: ObjectClass
+) -> DetectionScore:
+    """Greedy one-to-one matching by centres, highest-scoring predictions first.
+
+    A prediction matches a label when either box's centre lies inside the other,
+    and the closest such label is taken. IoU misleads when label and prediction
+    boxes differ in size for the same object: NLM white blood cells are points,
+    and NLM parasite circles include the halo while SAM boxes only the chromatin
+    dot (about 41 px against 11 px, an IoU near 0.07 for a correct hit).
+    """
+    preds = sorted((d for d in predicted if d.cls is cls), key=lambda d: d.score, reverse=True)
+    gts = [d for d in truth if d.cls is cls]
+    used = [False] * len(gts)
+    tp = 0
+    for p in preds:
+        px, py = p.box.center
+        best, best_dist = -1, math.inf
+        for i, g in enumerate(gts):
+            gx, gy = g.box.center
+            if used[i] or not (_contains(p.box, gx, gy) or _contains(g.box, px, py)):
+                continue
+            dist = math.hypot(gx - px, gy - py)
+            if dist < best_dist:
+                best, best_dist = i, dist
         if best >= 0:
             used[best] = True
             tp += 1

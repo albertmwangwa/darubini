@@ -1,0 +1,70 @@
+{
+  "title": "Darubini",
+  "brief": "A malaria microscopy copilot. A lab technician holds the phone to the microscope eyepiece, photographs thick-film fields or records a pan, and Darubini counts parasites against white blood cells until the WHO stop rule is met; a Muse Spark agent then checks the slide and writes the report in English or Kiswahili.",
+  "frame": "phone",
+  "platform": "android",
+  "paletteKey": "teal",
+  "theme": { "dark": false, "bothModes": true, "contrast": "standard", "shape": "rounded", "font": "roboto", "emphasized": true, "motion": "expressive" },
+  "frames": [
+    { "id": "start", "name": "Start", "x": 0, "y": 0, "place": "center", "note": "Welcome screen: what Darubini does and a single button to start counting a new slide." },
+    { "id": "capture", "name": "Capture", "x": 492, "y": 0, "length": 1100, "note": "Counting one slide. Shows the running parasite, white blood cell and field counts, progress to the white blood cell target, the last field with parasites circled and white blood cells boxed, and what to do next." },
+    { "id": "agent", "name": "Agent", "x": 984, "y": 0, "note": "The Muse Spark agent checks the slide. Each tool call appears as it happens: fields examined, second opinions on image quality, excluded fields, the parasite audit." },
+    { "id": "report", "name": "Report", "x": 1476, "y": 0, "length": 1200, "note": "The finished slide report: parasite density, the audit warning when the count is probably inflated, the agent's summary, excluded fields and the disclaimer." },
+    { "id": "settings", "name": "Settings", "x": 1968, "y": 0, "note": "Server address and report language." }
+  ],
+  "groups": [
+    { "id": "s-bar", "x": 0, "y": 0, "axis": "x", "items": [ { "id": "s-top", "kind": "topAppBar", "label": "Darubini", "icon": null, "icon2": "settings", "variant": "filled", "actions": { "icon2": { "to": "settings", "transition": "slide" } } } ] },
+    { "id": "s-hero", "x": 16, "y": 200, "axis": "x", "items": [ { "id": "s-img", "kind": "loadingIndicator", "label": "", "icon": null, "variant": "filled", "contained": true, "note": "Shown only while the server is being reached." } ] },
+    { "id": "s-title", "x": 16, "y": 280, "axis": "x", "items": [ { "id": "s-h", "kind": "text", "label": "Count a thick blood film", "icon": null, "variant": "filled", "size": 28, "bold": true } ] },
+    { "id": "s-intro", "x": 16, "y": 330, "axis": "x", "items": [ { "id": "s-card", "kind": "card", "label": "How it works", "supporting": "Hold the phone to the eyepiece. Photograph one field at a time, or record a short clip while you pan the slide. Darubini counts parasites against white blood cells and tells you when to stop.", "icon": "biotech", "variant": "filled", "noImage": true, "size2": 160 } ] },
+    { "id": "s-lang", "x": 16, "y": 510, "axis": "x", "items": [
+      { "id": "s-en", "kind": "button", "label": "English", "icon": null, "variant": "filled", "size": 182, "note": "Report and screens in English." },
+      { "id": "s-sw", "kind": "button", "label": "Kiswahili", "icon": null, "variant": "tonal", "size": 182, "note": "Report and screens in Kiswahili." }
+    ] },
+    { "id": "s-go", "x": 16, "y": 590, "axis": "x", "items": [ { "id": "s-begin", "kind": "button", "label": "Start a new slide", "icon": "play_arrow", "variant": "filled", "size": 380, "action": { "to": "capture", "transition": "slide" }, "note": "Creates a new counting session on the server and opens Capture." } ] },
+    { "id": "s-foot", "x": 16, "y": 800, "axis": "x", "items": [ { "id": "s-disc", "kind": "text", "label": "Decision support only. A qualified microscopist must confirm every result.", "icon": null, "variant": "filled", "size": 12 } ] },
+
+    { "id": "c-bar", "x": 492, "y": 0, "axis": "x", "items": [ { "id": "c-top", "kind": "topAppBar", "label": "Slide", "icon": "arrow_back", "icon2": "photo_library", "variant": "filled", "actions": { "icon": { "to": "back", "transition": "slide" } }, "note": "The trailing button sends an existing photo or clip from the gallery." } ] },
+    { "id": "c-p", "x": 508, "y": 104, "axis": "x", "items": [ { "id": "c-par", "kind": "card", "label": "212", "supporting": "Parasites", "icon": null, "variant": "filled", "fill": "primaryContainer", "noImage": true, "size": 116, "size2": 96 } ] },
+    { "id": "c-w", "x": 640, "y": 104, "axis": "x", "items": [ { "id": "c-wbc", "kind": "card", "label": "148", "supporting": "White blood cells", "icon": null, "variant": "filled", "fill": "secondaryContainer", "noImage": true, "size": 116, "size2": 96 } ] },
+    { "id": "c-f", "x": 772, "y": 104, "axis": "x", "items": [ { "id": "c-fld", "kind": "card", "label": "9", "supporting": "Fields", "icon": null, "variant": "filled", "fill": "tertiaryContainer", "noImage": true, "size": 116, "size2": 96 } ] },
+    { "id": "c-prog", "x": 508, "y": 216, "axis": "x", "items": [ { "id": "c-bar2", "kind": "linearProgress", "label": "", "icon": null, "variant": "filled", "value": 74, "wavy": true, "trackThickness": 8, "note": "White blood cells counted against the target (200, or 500 when parasites are scarce)." } ] },
+    { "id": "c-tgt", "x": 508, "y": 244, "axis": "x", "items": [ { "id": "c-target", "kind": "text", "label": "148 of 200 white blood cells", "icon": null, "variant": "filled", "size": 14 } ] },
+    { "id": "c-next", "x": 508, "y": 280, "axis": "x", "items": [ { "id": "c-banner", "kind": "listItem", "label": "Move to the next field", "supporting": "148 of 200 white blood cells", "icon": "arrow_forward", "variant": "filled", "note": "Says what to do next: retake (error colours, with the quality problem), next field, or finish (count complete)." } ] },
+    { "id": "c-view", "x": 508, "y": 368, "axis": "x", "items": [ { "id": "c-field", "kind": "image", "label": "", "icon": null, "variant": "filled", "size": 380, "note": "The last field photo with parasites circled in red and white blood cells boxed in blue." } ] },
+    { "id": "c-line", "x": 508, "y": 760, "axis": "x", "items": [ { "id": "c-last", "kind": "text", "label": "This field: 24 parasites, 17 white blood cells.", "icon": null, "variant": "filled", "size": 14 } ] },
+    { "id": "c-cap", "x": 508, "y": 900, "axis": "x", "items": [
+      { "id": "c-photo", "kind": "button", "label": "Photograph field", "icon": "photo_camera", "variant": "filled", "size": 182, "note": "Opens the camera, downscales the photo to 2048 px and uploads it; the server keeps the field only if it is usable." },
+      { "id": "c-clip", "kind": "button", "label": "Record a pan", "icon": "videocam", "variant": "tonal", "size": 182, "note": "Records a short clip while panning; SAM 3.1 tracking counts each parasite and white blood cell once." }
+    ] },
+    { "id": "c-fin", "x": 508, "y": 972, "axis": "x", "items": [ { "id": "c-finish", "kind": "button", "label": "Finish slide", "icon": "task_alt", "variant": "outlined", "size": 380, "action": { "to": "agent", "transition": "slide" }, "note": "Starts the Muse Spark agent report. Needs at least one kept field." } ] },
+
+    { "id": "a-bar", "x": 984, "y": 0, "axis": "x", "items": [ { "id": "a-top", "kind": "topAppBar", "label": "Muse Spark agent", "icon": "arrow_back", "variant": "filled", "actions": { "icon": { "to": "back", "transition": "slide" } } } ] },
+    { "id": "a-load", "x": 1000, "y": 112, "axis": "x", "items": [ { "id": "a-ind", "kind": "loadingIndicator", "label": "", "icon": null, "variant": "filled", "contained": true } ] },
+    { "id": "a-msg", "x": 1064, "y": 124, "axis": "x", "items": [ { "id": "a-working", "kind": "text", "label": "The agent is checking the slide…", "icon": null, "variant": "filled", "size": 16 } ] },
+    { "id": "a-steps", "x": 1000, "y": 184, "axis": "y", "items": [
+      { "id": "a-1", "kind": "listItem", "label": "Examined fields", "supporting": "10 → 212 / 148", "icon": "visibility", "variant": "filled" },
+      { "id": "a-2", "kind": "listItem", "label": "Second opinion on image quality", "supporting": "field-004: out of focus", "icon": "rate_review", "variant": "filled" },
+      { "id": "a-3", "kind": "listItem", "label": "Excluded a field", "supporting": "field-004: blurry, pale staining", "icon": "block", "variant": "filled" },
+      { "id": "a-4", "kind": "listItem", "label": "Audited a sample of parasites", "supporting": "15 / 20 confirmed", "icon": "fact_check", "variant": "filled" },
+      { "id": "a-5", "kind": "listItem", "label": "Wrote the report", "supporting": "", "icon": "description", "variant": "filled", "action": { "to": "report", "transition": "expand" } }
+    ] },
+
+    { "id": "r-bar", "x": 1476, "y": 0, "axis": "x", "items": [ { "id": "r-top", "kind": "topAppBar", "label": "Report", "icon": "close", "variant": "filled", "icon2": "share", "actions": { "icon": { "to": "start", "transition": "fade" } } } ] },
+    { "id": "r-dens", "x": 1492, "y": 104, "axis": "x", "items": [ { "id": "r-density", "kind": "card", "label": "24,195 parasites/µL", "supporting": "620 parasites at 205 white blood cells · 18 of 20 fields usable", "icon": "biotech", "variant": "filled", "fill": "primaryContainer", "noImage": true, "size2": 120 } ] },
+    { "id": "r-aud", "x": 1492, "y": 240, "axis": "x", "items": [ { "id": "r-audit", "kind": "card", "label": "Count probably inflated", "supporting": "Muse Spark confirmed 4 of 20 sampled parasites (20%). Platelets or debris may be counted. A microscopist must review this slide.", "icon": "warning", "variant": "filled", "fill": "tertiaryContainer", "noImage": true, "size2": 140, "note": "Only shown when the audit flags the slide (under 60% confirmed). Uses the error container colours." } ] },
+    { "id": "r-sum", "x": 1492, "y": 396, "axis": "x", "items": [ { "id": "r-narr", "kind": "card", "label": "Agent summary", "supporting": "We examined 20 fields, 18 used in the count…", "icon": "smart_toy", "variant": "outlined", "noImage": true, "size2": 160 } ] },
+    { "id": "r-ex", "x": 1492, "y": 572, "axis": "y", "items": [
+      { "id": "r-x1", "kind": "listItem", "label": "field-004", "supporting": "Out of focus, pale staining", "icon": "block", "variant": "filled" },
+      { "id": "r-x2", "kind": "listItem", "label": "field-011", "supporting": "Overexposed", "icon": "block", "variant": "filled" }
+    ] },
+    { "id": "r-full", "x": 1492, "y": 732, "axis": "x", "items": [ { "id": "r-text", "kind": "card", "label": "Full report", "supporting": "Fields examined: 20 (18 usable) …", "icon": null, "variant": "outlined", "noImage": true, "size2": 200 } ] },
+    { "id": "r-again", "x": 1492, "y": 960, "axis": "x", "items": [ { "id": "r-new", "kind": "button", "label": "Start another slide", "icon": "add", "variant": "filled", "size": 380, "action": { "to": "start", "transition": "fade" } } ] },
+    { "id": "r-foot", "x": 1492, "y": 1040, "axis": "x", "items": [ { "id": "r-disc", "kind": "text", "label": "Decision support only. A qualified microscopist must confirm every result.", "icon": null, "variant": "filled", "size": 12 } ] },
+
+    { "id": "t-bar", "x": 1968, "y": 0, "axis": "x", "items": [ { "id": "t-top", "kind": "topAppBar", "label": "Settings", "icon": "arrow_back", "variant": "filled", "actions": { "icon": { "to": "back", "transition": "slide" } } } ] },
+    { "id": "t-url", "x": 1984, "y": 112, "axis": "x", "items": [ { "id": "t-server", "kind": "textField", "label": "Server address", "supporting": "The computer running darubini serve, e.g. http://192.168.1.20:8000", "icon": "dns", "variant": "outlined", "note": "Saved on the phone." } ] },
+    { "id": "t-test", "x": 1984, "y": 200, "axis": "x", "items": [ { "id": "t-check", "kind": "button", "label": "Test connection", "icon": "wifi_tethering", "variant": "tonal", "size": 380, "note": "Calls /health and shows whether the server answered." } ] },
+    { "id": "t-lang", "x": 1984, "y": 280, "axis": "x", "items": [ { "id": "t-language", "kind": "select", "label": "Report language", "icon": "translate", "variant": "outlined", "tabs": [ { "label": "English" }, { "label": "Kiswahili" } ], "selected": 0 } ] }
+  ]
+}

@@ -22,16 +22,47 @@ class Segmenter(Protocol):
         ...
 
 
+SEGMENTERS = ("baseline", "sam3", "verified", "hybrid")
+
+
 def get_segmenter(settings: Settings | None = None) -> Segmenter:
-    """Build the segmenter named in settings (``baseline`` or ``sam3``)."""
+    """Build the segmenter named in settings.
+
+    - ``baseline``: stain blobs, offline.
+    - ``sam3``: SAM 3 text prompts for both classes.
+    - ``verified``: parasite candidates kept by the verifier; stain-blob WBCs. Offline.
+    - ``hybrid``: SAM 3 finds WBCs; the verifier keeps parasite candidates.
+    """
     s = settings or get_settings()
+    if s.segmenter not in SEGMENTERS:
+        raise ValueError(f"unknown segmenter {s.segmenter!r}; use one of {', '.join(SEGMENTERS)}")
+    from darubini.segmentation.baseline import BaselineSegmenter
+
     if s.segmenter == "baseline":
-        from darubini.segmentation.baseline import BaselineSegmenter
-
         return BaselineSegmenter()
-    if s.segmenter == "sam3":
-        from darubini.meta.client import MetaModelClient
-        from darubini.segmentation.sam import SamSegmenter
+    from darubini.segmentation.candidates import CandidateDetector
 
-        return SamSegmenter(MetaModelClient.from_settings(s), model=s.meta_segmentation_model)
-    raise ValueError(f"unknown segmenter {s.segmenter!r}; use 'baseline' or 'sam3'")
+    if s.segmenter == "verified":
+        from darubini.verifier import ParasiteVerifier, VerifiedSegmenter
+
+        return VerifiedSegmenter(
+            CandidateDetector(), ParasiteVerifier.load(s.verifier_path), wbc=BaselineSegmenter()
+        )
+
+    from darubini.meta.client import MetaModelClient
+    from darubini.segmentation.sam import SamSegmenter
+
+    client = MetaModelClient.from_settings(s)
+    if s.segmenter == "sam3":
+        return SamSegmenter.tuned(client, s.meta_segmentation_model)
+    from darubini.segmentation.sam import TUNED_MIN_SCORES
+    from darubini.types import ObjectClass
+    from darubini.verifier import ParasiteVerifier, VerifiedSegmenter
+
+    wbc = SamSegmenter(
+        client,
+        s.meta_segmentation_model,
+        concepts={"cell": ObjectClass.WBC},
+        class_min_score=TUNED_MIN_SCORES,
+    )
+    return VerifiedSegmenter(CandidateDetector(), ParasiteVerifier.load(s.verifier_path), wbc=wbc)

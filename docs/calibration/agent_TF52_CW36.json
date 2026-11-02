@@ -1,0 +1,287 @@
+{
+  "steps": [
+    {
+      "tool": "examine_next_fields",
+      "arguments": {
+        "count": 3
+      },
+      "result": {
+        "examined": [
+          {
+            "field_id": "20170812_114559.jpg",
+            "usable": true,
+            "parasites": 7,
+            "wbcs": 19,
+            "flags": [
+              "warning: field of view covers only 46% of the image"
+            ]
+          },
+          {
+            "field_id": "20170812_115053.jpg",
+            "usable": true,
+            "parasites": 6,
+            "wbcs": 25,
+            "flags": [
+              "warning: field of view covers only 44% of the image"
+            ]
+          },
+          {
+            "field_id": "20170812_115346.jpg",
+            "usable": true,
+            "parasites": 5,
+            "wbcs": 29,
+            "flags": [
+              "warning: field of view covers only 43% of the image"
+            ]
+          }
+        ],
+        "running": {
+          "fields_examined": 3,
+          "usable_fields": 3,
+          "parasites": 18,
+          "wbcs": 73,
+          "status": "continue",
+          "density_per_ul": 1973,
+          "reason": "continue to 200 WBC",
+          "fields_remaining": 8,
+          "stop_rule_met": false
+        }
+      }
+    },
+    {
+      "tool": "review_field",
+      "arguments": {
+        "field_id": "20170812_114559.jpg"
+      },
+      "result": {
+        "field_id": "20170812_114559.jpg",
+        "usable": true,
+        "issues": [],
+        "advice": "Focus is sharp, staining is balanced, smear thickness is appropriate and field is clean; image suitable for examination."
+      }
+    },
+    {
+      "tool": "review_field",
+      "arguments": {
+        "field_id": "20170812_115053.jpg"
+      },
+      "result": {
+        "field_id": "20170812_115053.jpg",
+        "usable": true,
+        "issues": [
+          "mild uneven background clearing in upper field"
+        ],
+        "advice": "Maintain current staining and focusing; ensure even smear thickness and uniform illumination across the field."
+      }
+    },
+    {
+      "tool": "review_field",
+      "arguments": {
+        "field_id": "20170812_115346.jpg"
+      },
+      "result": {
+        "field_id": "20170812_115346.jpg",
+        "usable": true,
+        "issues": [],
+        "advice": "Good focus with adequate staining contrast and appropriate thickness; suitable for microscopic review."
+      }
+    },
+    {
+      "tool": "examine_next_fields",
+      "arguments": {
+        "count": 3
+      },
+      "result": {
+        "examined": [
+          {
+            "field_id": "20170812_115556.jpg",
+            "usable": true,
+            "parasites": 10,
+            "wbcs": 28,
+            "flags": [
+              "warning: field of view covers only 45% of the image"
+            ]
+          },
+          {
+            "field_id": "20170812_120736.jpg",
+            "usable": true,
+            "parasites": 7,
+            "wbcs": 34,
+            "flags": [
+              "warning: field of view covers only 46% of the image"
+            ]
+          },
+          {
+            "field_id": "20170812_120916.jpg",
+            "usable": true,
+            "parasites": 7,
+            "wbcs": 29,
+            "flags": [
+              "warning: field of view covers only 46% of the image"
+            ]
+          }
+        ],
+        "running": {
+          "fields_examined": 6,
+          "usable_fields": 6,
+          "parasites": 42,
+          "wbcs": 164,
+          "status": "continue",
+          "density_per_ul": 2049,
+          "reason": "continue to 200 WBC",
+          "fields_remaining": 5,
+          "stop_rule_met": false
+        }
+      }
+    },
+    {
+      "tool": "review_field",
+      "arguments": {
+        "field_id": "20170812_115556.jpg"
+      },
+      "result": {
+        "field_id": "20170812_115556.jpg",
+        "usable": true,
+        "issues": [],
+        "advice": "Focus, staining, and smear thickness are adequate with minimal debris or artefacts; maintain current preparation and imaging technique."
+      }
+    },
+    {
+      "tool": "review_field",
+      "arguments": {
+        "field_id": "20170812_120736.jpg"
+      },
+      "result": {
+        "field_id": "20170812_120736.jpg",
+        "usable": true,
+        "issues": [],
+        "advice": "Focus, staining and thickness are adequate for examination."
+      }
+    },
+    {
+      "tool": "review_field",
+      "arguments": {
+        "field_id": "20170812_120916.jpg"
+      },
+      "result": {
+        "field_id": "20170812_120916.jpg",
+        "usable": true,
+        "issues": [],
+        "advice": "Focus, staining and smear thickness are adequate with complete lysis and minimal debris; maintain current preparation and capture settings."
+      }
+    },
+    {
+      "tool": "examine_next_fields",
+      "arguments": {
+        "count": 5
+      },
+      "result": {
+        "examined": [
+          {
+            "field_id": "20170812_161123.jpg",
+            "usable": true,
+            "parasites": 17,
+            "wbcs": 23,
+            "flags": [
+              "warning: field of view covers only 45% of the image"
+            ]
+          },
+          {
+            "field_id": "20170812_161358.jpg",
+            "usable": true,
+            "parasites": 4,
+            "wbcs": 26,
+            "flags": [
+              "warning: field of view covers only 45% of the image"
+            ]
+          }
+        ],
+        "running": {
+          "fields_examined": 8,
+          "usable_fields": 8,
+          "parasites": 63,
+          "wbcs": 213,
+          "status": "complete",
+          "density_per_ul": 2366,
+          "reason": "63 parasites at 213 WBC (>= 10 at 200)",
+          "fields_remaining": 3,
+          "stop_rule_met": true
+        }
+      }
+    },
+    {
+      "tool": "review_field",
+      "arguments": {
+        "field_id": "20170812_161123.jpg"
+      },
+      "result": {
+        "field_id": "20170812_161123.jpg",
+        "usable": true,
+        "issues": [],
+        "advice": "Focus, staining, and smear thickness are adequate with minimal debris; field is suitable for examination."
+      }
+    },
+    {
+      "tool": "review_field",
+      "arguments": {
+        "field_id": "20170812_161358.jpg"
+      },
+      "result": {
+        "field_id": "20170812_161358.jpg",
+        "usable": true,
+        "issues": [],
+        "advice": "Good focus, staining contrast and smear thickness with clean background; maintain current preparation and imaging settings."
+      }
+    },
+    {
+      "tool": "audit_parasites",
+      "arguments": {},
+      "result": {
+        "sampled": 20,
+        "confirmed": 7,
+        "confirmed_percent": 35,
+        "audited_parasites": 22,
+        "flagged": true,
+        "parasites_counted": 63
+      }
+    },
+    {
+      "tool": "finish",
+      "arguments": {
+        "narrative": "Tulichunguza sehemu 8 zinazoweza kutumika na kuhesabu vimelea 63 dhidi ya leukositi 213, wiani uliokokotwa ni 2366 kwa mikrolita. Mapitio ya ubora yalionyesha sehemu zinafaa kwa uchunguzi licha ya maonyo kwamba uwanja unafunika asilimia 43 hadi 46 ya picha. Ukaguzi wa pili ulithibitisha vimelea 7 kati ya 20 vilivyosampuliwa (asilimia 35), na kukadiria vimelea 22 badala ya 63. Kwa hivyo hesabu hii inaonekana kupandishwa na inahitaji mapitio ya mikono, fundi mwenye sifa lazima athibitishe matokeo."
+      },
+      "result": {
+        "ok": true,
+        "fields_examined": 8,
+        "usable_fields": 8,
+        "parasites": 63,
+        "wbcs": 213,
+        "status": "complete",
+        "density_per_ul": 2366,
+        "reason": "63 parasites at 213 WBC (>= 10 at 200)",
+        "fields_remaining": 3,
+        "stop_rule_met": true
+      }
+    }
+  ],
+  "report": {
+    "fields_examined": 8,
+    "usable_fields": 8,
+    "parasites": 63,
+    "wbcs": 213,
+    "status": "complete",
+    "density_per_ul": 2366.1971830985917,
+    "reason": "63 parasites at 213 WBC (>= 10 at 200)"
+  },
+  "narrative": "Tulichunguza sehemu 8 zinazoweza kutumika na kuhesabu vimelea 63 dhidi ya leukositi 213, wiani uliokokotwa ni 2366 kwa mikrolita. Mapitio ya ubora yalionyesha sehemu zinafaa kwa uchunguzi licha ya maonyo kwamba uwanja unafunika asilimia 43 hadi 46 ya picha. Ukaguzi wa pili ulithibitisha vimelea 7 kati ya 20 vilivyosampuliwa (asilimia 35), na kukadiria vimelea 22 badala ya 63. Kwa hivyo hesabu hii inaonekana kupandishwa na inahitaji mapitio ya mikono, fundi mwenye sifa lazima athibitishe matokeo.",
+  "excluded": {},
+  "audit": {
+    "sampled": 20,
+    "confirmed": 7,
+    "confirmed_percent": 35,
+    "audited_parasites": 22,
+    "flagged": true
+  },
+  "finished_by_agent": true,
+  "notes": []
+}

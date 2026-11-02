@@ -37,3 +37,4 @@ runs/
 .vscode/
 .audit-requirements.txt
 datasets/PROFILE.md
+.cache/

@@ -29,6 +29,7 @@ dependencies = [
   "uvicorn[standard]>=0.29",
   "python-multipart>=0.0.9",
   "tqdm>=4.66",
+  "av>=12",
 ]
 
 [project.optional-dependencies]

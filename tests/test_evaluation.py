@@ -1,6 +1,6 @@
 import pytest
 
-from darubini.evaluation import count_agreement, match_detections, slide_accuracy
+from darubini.evaluation import count_agreement, match_centres, match_detections, slide_accuracy
 from darubini.types import BoundingBox, Detection, ObjectClass
 
 P = ObjectClass.PARASITE
@@ -45,3 +45,15 @@ def test_slide_accuracy():
     assert slide_accuracy([], []).sensitivity == 0.0
     with pytest.raises(ValueError):
         slide_accuracy([True], [])
+
+
+def test_match_centres_for_point_labels():
+    def det(x0, y0, x1, y1, score=1.0):
+        return Detection(cls=ObjectClass.WBC, box=BoundingBox(x0, y0, x1, y1), score=score)
+
+    truth = [det(48, 48, 52, 52), det(58, 48, 62, 52), det(200, 200, 204, 204)]
+    big = det(0, 0, 100, 100, 0.9)  # contains two labels, takes the closer one
+    second = det(55, 40, 70, 60, 0.8)
+    stray = det(300, 300, 310, 310, 0.7)
+    s = match_centres([big, second, stray], truth, ObjectClass.WBC)
+    assert (s.true_positives, s.false_positives, s.false_negatives) == (2, 1, 1)
