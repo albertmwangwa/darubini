@@ -46,12 +46,13 @@ Darubini keeps the microscopist in charge and takes the tedious counting off the
 
 ## What Darubini does
 
-1. **Capture.** A phone held to the eyepiece photographs one microscope field at a time (or a slide image is uploaded).
+1. **Capture.** A phone held to the eyepiece photographs one microscope field at a time, or records a short clip while the technician pans the slide (or a slide image is uploaded).
 2. **Quality gate.** Fast checks for focus, exposure and staining reject unusable fields and ask for another, as a careful technician would.
-3. **Segment.** SAM 3 finds every parasite and white blood cell (WBC) from text concept prompts, refined with a few on-slide exemplars.
+3. **Segment.** SAM 3 finds the white blood cells (WBC) from a text concept prompt. Parasites start as high-recall candidates (spots that absorb green light, as Giemsa-stained chromatin does), and a small verifier network keeps the real ones.
 4. **Count.** Parasites are counted against WBC and converted to **parasites per microlitre** using the procedure taught in WHO *Basic Malaria Microscopy*: count against 200 WBC, extend to 500 WBC when few parasites are seen, and declare a slide negative only after enough clean fields. Every threshold is configurable.
-5. **Review and report.** Muse Spark acts as a second reader for image quality and writes a short report in **Kiswahili or English** around numbers the pipeline computed. The model never changes a number.
-6. **Hand back.** Uncertain fields are flagged for the microscopist to confirm.
+5. **Agent, audit and report.** A Muse Spark agent runs the count through deterministic tools: it chooses how many fields to examine at a time, asks a vision second reader about doubtful fields, excludes unusable ones with a reason, and audits a random sample of its own parasite detections before it may finish. It then writes the narrative in **Kiswahili or English**. The model never sets a number: a narrative quoting a number the tools did not return is dropped.
+6. **Count once on video.** SAM 3.1 tracks each detected parasite and WBC through a panning clip, so an object seen in many frames is counted once.
+7. **Hand back.** Excluded fields and audit warnings are listed for the microscopist to confirm.
 
 ```text
 Fields examined: 14 (13 usable)
@@ -69,14 +70,14 @@ Decision-support estimate only. A qualified microscopist must confirm this resul
 
 | Meta tool | Role in Darubini | Beyond a basic call |
 | --- | --- | --- |
-| **SAM 3** (promptable concept segmentation) | Finds parasites and WBC nuclei from text concepts | Exemplar prompts from a few expert-confirmed objects adapt it to each slide's stain without retraining; video tracking across a moving eyepiece stream avoids double counting |
-| **Muse Spark** (multimodal reasoning) | Field quality second-reader; bilingual report writer | Tool-calling agent that queries the counting engine, decides when to move to the next field, and explains disagreements between SAM 3 and the baseline |
+| **SAM 3** (promptable concept segmentation) | Finds WBC from a text concept (F1 0.95 on NIH validation fields); tracks objects through video | Box prompts on keyframe detections, followed through an MP4 clip, so each parasite and WBC is counted once while the slide pans (`darubini track`); prompt wording and tiling tuned by a cached, cost-guarded sweep |
+| **Muse Spark** (multimodal reasoning) | Tool-calling counting agent; field quality second reader; parasite audit; bilingual narrative | Runs a whole slide unattended through five tools under guardrails (`darubini agent`); audits a random montage of 20 detections and flags slides where the count is probably inflated by platelets or debris |
 | **Meta open-weights models** (via partner inference) | Offline Kiswahili report drafting | Path to a low-connectivity clinic deployment |
 | **Muse Code** | Pair-programming during the build | Generates test scaffolds and evaluation scripts |
 
 Glimmer and any other tools announced at kickoff will be assessed on day 1 and added here if they fit.
 
-All Meta Model API calls sit behind one adapter, [`src/darubini/meta/client.py`](src/darubini/meta/client.py). Routes and payload fields are wired to the official docs at kickoff, with no other code changes needed.
+All Meta Model API calls sit behind one adapter, [`src/darubini/meta/client.py`](src/darubini/meta/client.py), wired to `https://api.meta.ai/v1`: SAM 3.1 through the Responses API, Muse Spark through Chat Completions. SAM replies are cached on disk, so an image and prompt are never billed twice.
 
 ## Architecture
 
@@ -85,27 +86,34 @@ flowchart LR
     A[Phone on eyepiece<br/>or slide upload] --> B[Quality gate<br/>focus, exposure, stain]
     B -- unusable --> A
     B -- usable --> C{Segmenter}
-    C -->|online| D[SAM 3<br/>concept + exemplar prompts]
-    C -->|offline| E[Baseline<br/>stain threshold + components]
+    C -->|WBC, online| D[SAM 3<br/>text concept]
+    C -->|WBC, offline| E[Baseline<br/>stain blobs]
+    C -->|parasites| V[Candidates<br/>green absorption]
+    V --> W[Verifier<br/>small network]
     D --> F[Counting engine<br/>WHO thick-film rule]
     E --> F
+    W --> F
     F -- keep counting --> A
     F -- complete or negative --> G[Report<br/>en / sw template]
-    G --> H[Muse Spark<br/>QC review + narrative]
+    G --> H[Muse Spark agent<br/>QC review, audit, narrative]
     H --> I[Microscopist confirms]
 ```
 
 | Module | Responsibility |
 | --- | --- |
-| `darubini.quality` | Laplacian-variance focus, exposure and Giemsa stain-fraction checks |
-| `darubini.segmentation` | `Segmenter` protocol; `BaselineSegmenter` (offline) and `SamSegmenter` (SAM 3) |
+| `darubini.quality` | Laplacian-variance focus (at a fixed 1,024 px scale), exposure and Giemsa stain-fraction checks; `darubini.calibration` sets the focus floor from real fields |
+| `darubini.segmentation` | `Segmenter` protocol and factory (`baseline`, `verified`, `sam3`, `hybrid`); `BaselineSegmenter`, `CandidateDetector` (green-absorption parasite candidates) and `SamSegmenter` (SAM 3, tiled) |
+| `darubini.verifier` | Parasite verifier: a small NumPy network that keeps real parasites among candidates; weights in `.npz`, no pickle |
 | `darubini.counting` | Parasite density, configurable WHO-style stopping rule, slide status |
 | `darubini.report` | Deterministic English and Kiswahili reports (the source of truth for numbers) |
-| `darubini.meta` | Meta Model API client and the Muse Spark reviewer |
+| `darubini.meta` | Meta Model API client (SAM 3.1 images and video, Muse Spark chat and tool calls) and the Muse Spark reviewer |
+| `darubini.agent`, `darubini.audit` | Muse Spark counting agent with guardrails; second-reader audit of parasite detections |
+| `darubini.tracking`, `darubini.video` | Count each object once across a panning clip (SAM 3.1 video or offline shift tracker); MP4 encode/decode with PyAV |
 | `darubini.data` | Dataset manifest, resumable checksum-verified downloads, annotation parsers |
-| `darubini.evaluation` | Detection precision/recall/F1, count MAE and bias, slide sensitivity/specificity |
+| `darubini.evaluation` | Detection precision/recall/F1 (centre or IoU matching), count MAE and bias, slide sensitivity/specificity |
+| `darubini.benchmark`, `darubini.sweep` | Score whole segmenters on labelled splits; SAM prompt and tiling sweeps with a cost guard |
 | `darubini.api` | FastAPI service (`POST /v1/analyse`, `GET /health`, OpenAPI docs at `/docs`) |
-| `darubini.cli` | `darubini datasets`, `download`, `verify`, `links`, `analyse`, `serve` |
+| `darubini.cli` | `darubini datasets`, `download`, `verify`, `links`, `calibrate`, `sweep`, `train-verifier`, `evaluate`, `analyse`, `agent`, `track`, `serve` |
 
 ## Quick start
 
@@ -131,14 +139,21 @@ Try it offline with the baseline segmenter (no API key needed):
 
 ```bash
 .venv/bin/darubini analyse path/to/field1.jpg path/to/field2.jpg --language sw
-make serve          # API on http://127.0.0.1:8000, interactive docs at /docs
+make serve          # phone app on http://127.0.0.1:8000, API docs at /docs
 ```
 
-Switch to SAM 3 once you have Meta Model API credits:
+With Meta Model API credits, the full pipeline (SAM 3 for WBC, the Muse Spark agent and audit, SAM 3.1 video tracking):
 
 ```bash
-cp .env.example .env    # set META_API_KEY, META_API_BASE_URL, DARUBINI_SEGMENTER=sam3
+cp .env.example .env    # set META_API_KEY, META_API_BASE_URL, DARUBINI_SEGMENTER=hybrid
+darubini agent path/to/slide-folder --language sw --transcript agent.json
+darubini track pan.mp4                      # or: darubini track field.jpg --synthetic
+darubini serve --host 0.0.0.0               # open http://<this-computer's-IP>:8000 on the phone
 ```
+
+**Phone app.** Open the server's address on the phone (same Wi-Fi). Photograph one field at a time through the eyepiece, or record a short clip while panning: each capture comes back in a few seconds with parasites and WBC marked, the running count and the next step (retake, next field, finish). *Finish slide* runs the Muse Spark agent over the captured fields; its tool calls appear live, then the report in English or Kiswahili with any audit warning. Photos are shrunk to 2,048 px on the phone (about 230 KB each) for slow connections.
+
+**Native Android app.** [android/](android/) is the same flow as a Kotlin and Jetpack Compose app. Its screens were sketched in M3E Canvas and styled in the Credit Design Figma language ([android/design/DESIGN.md](android/design/DESIGN.md)). Build it with `cd android && ./gradlew :app:assembleDebug` (or open the folder in Android Studio), then set the server address in its Settings. See [android/README.md](android/README.md).
 
 Docker:
 
@@ -183,7 +198,7 @@ The headline question: **does Darubini's count agree with an expert's, on slides
 | Parasite and WBC detection precision, recall, F1 (IoU ≥ 0.3) | NLM held-out patients, UDOM Tanzania | Are we finding the right objects? |
 | Count MAE, mean bias and Pearson *r* per field | UDOM Tanzania (never trained on) | Does the count track the expert? |
 | Slide-level sensitivity and specificity | NM-AIST Tanzania, NLM uninfected | Does it call positive and negative slides correctly? |
-| Ablations: baseline vs SAM 3 text vs SAM 3 + exemplars | All of the above | Shows exactly what each Meta capability adds |
+| Ablations: baseline vs SAM 3 text vs candidates + verifier vs hybrid | All of the above | Shows exactly what each component adds |
 
 Method and results: [`docs/EVALUATION.md`](docs/EVALUATION.md).
 
@@ -233,10 +248,12 @@ The day-by-day hackathon plan is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEME
 
 - [x] Repository, CI quality gates, dataset manifest and downloader
 - [x] Counting engine, quality gate, baseline segmenter, bilingual report, API, CLI
-- [ ] Wire the Meta Model API routes at kickoff; SAM 3 text-prompt run on all core data
-- [ ] Exemplar prompting and prompt ablations; publish evaluation tables
-- [ ] Muse Spark tool-calling agent for live counting sessions
-- [ ] Phone capture web app with mask overlay and running count
+- [x] Wire the Meta Model API; SAM 3 prompt and tiling sweeps with a response cache
+- [x] Parasite candidates + verifier, adapted to Tanzanian (UDOM) smears on a development slice
+- [ ] Final evaluation tables on the frozen test sets
+- [x] Muse Spark tool-calling agent with a parasite audit; SAM 3.1 video tracking
+- [x] Phone capture web app with detection overlay, running count and live agent report
+- [x] Native Android app (Compose), styled in the Credit Design Figma language
 - [ ] Live demo on a real microscope in Dar es Salaam; 3-minute video
 
 ## Responsible AI

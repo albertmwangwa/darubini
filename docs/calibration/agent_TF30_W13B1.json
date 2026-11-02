@@ -1,0 +1,317 @@
+{
+  "steps": [
+    {
+      "tool": "examine_next_fields",
+      "arguments": {
+        "count": 2
+      },
+      "result": {
+        "examined": [
+          {
+            "field_id": "20170724_144112.jpg",
+            "usable": true,
+            "parasites": 266,
+            "wbcs": 19,
+            "flags": [
+              "warning: field of view covers only 48% of the image"
+            ]
+          },
+          {
+            "field_id": "20170724_144325.jpg",
+            "usable": true,
+            "parasites": 162,
+            "wbcs": 15,
+            "flags": [
+              "warning: field of view covers only 48% of the image"
+            ]
+          }
+        ],
+        "running": {
+          "fields_examined": 2,
+          "usable_fields": 2,
+          "parasites": 428,
+          "wbcs": 34,
+          "status": "continue",
+          "density_per_ul": 100706,
+          "reason": "continue to 200 WBC",
+          "fields_remaining": 14,
+          "stop_rule_met": false
+        }
+      }
+    },
+    {
+      "tool": "review_field",
+      "arguments": {
+        "field_id": "20170724_144112.jpg"
+      },
+      "result": {
+        "field_id": "20170724_144112.jpg",
+        "usable": true,
+        "issues": [
+          "fine stain precipitate/debris throughout field",
+          "pale low-contrast background staining"
+        ],
+        "advice": "Use freshly filtered stain at correct pH and timing, rinse thoroughly to reduce precipitate, and ensure even illumination and focus across the field."
+      }
+    },
+    {
+      "tool": "review_field",
+      "arguments": {
+        "field_id": "20170724_144325.jpg"
+      },
+      "result": {
+        "field_id": "20170724_144325.jpg",
+        "usable": true,
+        "issues": [
+          "overexposure",
+          "pale background staining",
+          "minor stain debris"
+        ],
+        "advice": "Reduce microscope illumination and camera exposure, optimize Giemsa staining time and washing to improve contrast and reduce background debris."
+      }
+    },
+    {
+      "tool": "examine_next_fields",
+      "arguments": {
+        "count": 3
+      },
+      "result": {
+        "examined": [
+          {
+            "field_id": "20170724_144553.jpg",
+            "usable": true,
+            "parasites": 167,
+            "wbcs": 14,
+            "flags": [
+              "warning: field of view covers only 44% of the image"
+            ]
+          },
+          {
+            "field_id": "20170724_144756.jpg",
+            "usable": true,
+            "parasites": 244,
+            "wbcs": 15,
+            "flags": [
+              "warning: field of view covers only 45% of the image"
+            ]
+          },
+          {
+            "field_id": "20170724_144941.jpg",
+            "usable": true,
+            "parasites": 194,
+            "wbcs": 19,
+            "flags": [
+              "warning: field of view covers only 48% of the image"
+            ]
+          }
+        ],
+        "running": {
+          "fields_examined": 5,
+          "usable_fields": 5,
+          "parasites": 1033,
+          "wbcs": 82,
+          "status": "continue",
+          "density_per_ul": 100780,
+          "reason": "continue to 200 WBC",
+          "fields_remaining": 11,
+          "stop_rule_met": false
+        }
+      }
+    },
+    {
+      "tool": "review_field",
+      "arguments": {
+        "field_id": "20170724_144553.jpg"
+      },
+      "result": {
+        "field_id": "20170724_144553.jpg",
+        "usable": true,
+        "issues": [
+          "uneven illumination with pink cast on right edge",
+          "pale washed-out background",
+          "minor stain precipitate"
+        ],
+        "advice": "Acceptable for quality review; for improved quality ensure even illumination/white balance, use fine focus lock, and standardize staining and gentle washing to preserve smear matrix and reduce precipitate."
+      }
+    },
+    {
+      "tool": "review_field",
+      "arguments": {
+        "field_id": "20170724_144756.jpg"
+      },
+      "result": {
+        "field_id": "20170724_144756.jpg",
+        "usable": true,
+        "issues": [
+          "slightly over-bright illumination",
+          "minor background stippling/stain precipitate"
+        ],
+        "advice": "Reduce illumination slightly for better contrast and use freshly filtered stain to minimize background dots; current focus, thickness and staining are acceptable, no need to remake smear."
+      }
+    },
+    {
+      "tool": "review_field",
+      "arguments": {
+        "field_id": "20170724_144941.jpg"
+      },
+      "result": {
+        "field_id": "20170724_144941.jpg",
+        "usable": true,
+        "issues": [],
+        "advice": "Focus, staining and thickness are adequate with minimal background debris; image is suitable for microscopic review."
+      }
+    },
+    {
+      "tool": "examine_next_fields",
+      "arguments": {
+        "count": 10
+      },
+      "result": {
+        "examined": [
+          {
+            "field_id": "20170724_145215.jpg",
+            "usable": true,
+            "parasites": 268,
+            "wbcs": 17,
+            "flags": [
+              "warning: field of view covers only 47% of the image"
+            ]
+          },
+          {
+            "field_id": "20170724_145437.jpg",
+            "usable": true,
+            "parasites": 284,
+            "wbcs": 12,
+            "flags": [
+              "warning: field of view covers only 47% of the image"
+            ]
+          },
+          {
+            "field_id": "20170724_145603.jpg",
+            "usable": true,
+            "parasites": 352,
+            "wbcs": 20,
+            "flags": [
+              "warning: field of view covers only 45% of the image"
+            ]
+          },
+          {
+            "field_id": "20170724_145730.jpg",
+            "usable": true,
+            "parasites": 232,
+            "wbcs": 16,
+            "flags": [
+              "warning: field of view covers only 45% of the image"
+            ]
+          },
+          {
+            "field_id": "20170724_145845.jpg",
+            "usable": true,
+            "parasites": 257,
+            "wbcs": 11,
+            "flags": [
+              "warning: field of view covers only 47% of the image"
+            ]
+          },
+          {
+            "field_id": "20170724_150155.jpg",
+            "usable": true,
+            "parasites": 263,
+            "wbcs": 13,
+            "flags": [
+              "warning: field of view covers only 50% of the image"
+            ]
+          },
+          {
+            "field_id": "20170724_150436.jpg",
+            "usable": true,
+            "parasites": 129,
+            "wbcs": 6,
+            "flags": [
+              "warning: field of view covers only 44% of the image"
+            ]
+          },
+          {
+            "field_id": "20170724_150706.jpg",
+            "usable": true,
+            "parasites": 285,
+            "wbcs": 17,
+            "flags": [
+              "warning: field of view covers only 48% of the image"
+            ]
+          },
+          {
+            "field_id": "20170724_150834.jpg",
+            "usable": true,
+            "parasites": 221,
+            "wbcs": 10,
+            "flags": [
+              "warning: field of view covers only 47% of the image"
+            ]
+          }
+        ],
+        "running": {
+          "fields_examined": 14,
+          "usable_fields": 14,
+          "parasites": 3324,
+          "wbcs": 204,
+          "status": "complete",
+          "density_per_ul": 130353,
+          "reason": "3324 parasites at 204 WBC (>= 10 at 200)",
+          "fields_remaining": 2,
+          "stop_rule_met": true
+        }
+      }
+    },
+    {
+      "tool": "audit_parasites",
+      "arguments": {},
+      "result": {
+        "sampled": 20,
+        "confirmed": 13,
+        "confirmed_percent": 65,
+        "audited_parasites": 2161,
+        "flagged": false,
+        "parasites_counted": 3324
+      }
+    },
+    {
+      "tool": "finish",
+      "arguments": {
+        "narrative": "Tulichunguza sehemu 14 zinazoweza kutumika na kuhesabu vimelea 3324 pamoja na leukositi 204, ambapo msongamano uliokokotolewa ni 130353 kwa mikrolita. Sehemu zote zilikuwa na onyo kwamba uwanja wa maoni unashughulikia sehemu ndogo ya picha, na ukaguzi wa ubora ulionyesha mwangaza mkali, rangi iliyopauka na mabaki kidogo ya rangi lakini sehemu zilibaki zinazoweza kutumika. Msomaji wa pili alithibitisha vimelea 13 kati ya sampuli ya 20 (asilimia 65), na makadirio yaliyokaguliwa ni vimelea 2161. Mwanamaabara mwenye sifa lazima athibitishe matokeo haya kabla ya hatua zaidi."
+      },
+      "result": {
+        "ok": true,
+        "fields_examined": 14,
+        "usable_fields": 14,
+        "parasites": 3324,
+        "wbcs": 204,
+        "status": "complete",
+        "density_per_ul": 130353,
+        "reason": "3324 parasites at 204 WBC (>= 10 at 200)",
+        "fields_remaining": 2,
+        "stop_rule_met": true
+      }
+    }
+  ],
+  "report": {
+    "fields_examined": 14,
+    "usable_fields": 14,
+    "parasites": 3324,
+    "wbcs": 204,
+    "status": "complete",
+    "density_per_ul": 130352.94117647059,
+    "reason": "3324 parasites at 204 WBC (>= 10 at 200)"
+  },
+  "narrative": "Tulichunguza sehemu 14 zinazoweza kutumika na kuhesabu vimelea 3324 pamoja na leukositi 204, ambapo msongamano uliokokotolewa ni 130353 kwa mikrolita. Sehemu zote zilikuwa na onyo kwamba uwanja wa maoni unashughulikia sehemu ndogo ya picha, na ukaguzi wa ubora ulionyesha mwangaza mkali, rangi iliyopauka na mabaki kidogo ya rangi lakini sehemu zilibaki zinazoweza kutumika. Msomaji wa pili alithibitisha vimelea 13 kati ya sampuli ya 20 (asilimia 65), na makadirio yaliyokaguliwa ni vimelea 2161. Mwanamaabara mwenye sifa lazima athibitishe matokeo haya kabla ya hatua zaidi.",
+  "excluded": {},
+  "audit": {
+    "sampled": 20,
+    "confirmed": 13,
+    "confirmed_percent": 65,
+    "audited_parasites": 2161,
+    "flagged": false
+  },
+  "finished_by_agent": true,
+  "notes": []
+}

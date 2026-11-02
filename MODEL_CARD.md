@@ -2,7 +2,7 @@
 
 ## Overview
 
-Darubini is a pipeline, not a single model. It combines an image quality gate, a segmenter (Meta SAM 3, or an offline baseline), a deterministic counting engine and a report writer (template, optionally narrated by Meta Muse Spark).
+Darubini is a pipeline, not a single model. It combines an image quality gate, white blood cell detection (Meta SAM 3, or an offline baseline), parasite candidates kept by a small verifier network trained on NIH and Tanzanian (UDOM) fields, a deterministic counting engine and a report writer (template, optionally narrated by Meta Muse Spark). A Muse Spark agent can run the count through tools and audits a random sample of parasite detections; SAM 3.1 video tracking counts each object once across a panning clip.
 
 ## Intended use
 
@@ -28,6 +28,7 @@ Protocol and results: [`docs/EVALUATION.md`](docs/EVALUATION.md). Results will b
 ## Known limitations
 
 - Very small or faint ring forms may be missed; heavy staining and thick areas cause false positives.
+- **Platelets, bacteria and stain debris can pass as parasites.** On some low-density NIH validation slides this inflated the count 5 to 15 times. The Muse Spark audit flags such slides for manual review (it caught all 5 over-counted slides of 8 checked); it does not correct the WHO count.
 - Density uses an **assumed** 8,000 WBC/µL; true WBC counts vary between patients.
 - Smartphone capture quality varies with phone, adapter and illumination.
 - Performance on stains, microscopes and populations not represented in the data is unknown.
