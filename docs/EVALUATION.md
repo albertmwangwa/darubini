@@ -86,15 +86,40 @@ Dense slides are accurate (13 of the 15 densest within 13%). The worst errors ar
 
 ## Ablations
 
+Final test sets, scored once on 2 Nov 2026. F1 is given as NIH / UDOM. Count MAE is parasites per UDOM tile. Sensitivity and specificity are for the slide call on the 31 NIH test slides (24 infected, 7 uninfected). Full tables with intervals: [calibration/final_test.md](calibration/final_test.md).
+
 | Variant | Parasite F1 | WBC F1 | Count MAE (UDOM TZ) | Sensitivity | Specificity |
 | --- | --- | --- | --- | --- | --- |
-| Baseline (stain threshold) | | | | | |
-| SAM 3, text prompt | | | | | |
-| SAM 3, best text prompt | | | | | |
-| Candidates + verifier (offline) | | | | | |
-| SAM 3 WBC + candidates + verifier (hybrid) | | | | | |
-| Hybrid + Muse Spark agent (QC review, exclusions) | | | | | |
-| Hybrid + Muse Spark audit flag (slide-level) | | | | | |
+| Baseline (stain threshold) | 0.30 / 0.28 | 0.50 / 0.43 | 7.6 | not scored | not scored |
+| SAM 3, text prompt | not run on test; see the prompt sweep | | | | |
+| SAM 3, best text prompt (60 NIH fields / 300 UDOM tiles) | 0.64 / 0.15 | 0.90 / 0.43 | 3.9 | not scored | not scored |
+| Candidates + verifier (offline) | 0.76 / 0.48 | 0.50 / 0.43 | 2.7 | 13/24 = 54% | 6/7 = 86% |
+| SAM 3 WBC + candidates + verifier (hybrid) | 0.80 / 0.48 | 0.90 / 0.43 | 2.7 | 12/24 = 50% | 6/7 = 86% |
+| Hybrid + Muse Spark agent (QC review, exclusions) | density within ±25% of expert on 10/24 slides; excluded 19 of 299 fields | | | | |
+| Hybrid + Muse Spark audit flag (slide-level) | flags 8/8 slides over-counted ≥1.5×, 5/16 slides counted within 1.5× and 7/7 uninfected slides | | | | |
+
+### What the test results say
+
+- **Parasite detection holds up on NIH.** On held-out patients the hybrid mode gets F1 0.80 against 0.78 to 0.81 in development. Its parasite count is nearly unbiased (−1.5 per field).
+- **Density is the strongest result.** With hybrid, the median predicted/expert density ratio is 1.02 and log densities correlate at *r* = 0.93. 19 of 24 slides are within 2× of the expert, and 11 of 24 within ±25%. SAM's white blood cell count (F1 0.90 against 0.50 for stain blobs) is what moves verified (median 0.64) to hybrid.
+- **Tanzanian smears remain the weak point.** UDOM parasite F1 is 0.48, the same as in development (0.44 to 0.46). SAM text prompting alone does worse there (0.15).
+- **The count threshold does not separate infected from uninfected slides well.**
+  - Thresholds chosen on development slides give sensitivity 50 to 54% and specificity 86% on test, against 71 to 75% and 90% on the development slides that chose the thresholds.
+  - The "any parasite" rule gives 100% sensitivity and 0% specificity, because every uninfected slide has false-positive detections.
+  - Darubini is a **density estimator for slides already read positive**, not a negative/positive screen.
+- **The Muse Spark audit is a sensitive safety net.**
+  - It flagged all 8 slides over-counted by 1.5× or more, and all 7 uninfected slides.
+  - It also flagged 5 of the 16 slides counted correctly.
+  - In practice it sends a slide to a microscopist, rather than deciding.
+- **NM-AIST failed completely.**
+  - Sensitivity was 0/400 and specificity 400/400 for both modes. The ROC AUC of the per-image parasite count is 0.51 (verified) and 0.52 (hybrid), which is chance.
+  - **Cause: scale.** These images are whole 4K microscope frames (3840 × 2160). At that scale parasites are a few pixels across, and both modes find almost none in infected and uninfected images alike (median 0, 90th percentile 0).
+  - **Confound:** part of the uninfected folder is 1640 × 922 RGBA, a different format from the infected folder. So even a working detector could separate the two classes by format alone.
+  - A fixed tiling of these frames would be a new method, so it is not tried on this test set.
+
+**Further deviations from the reporting rules.**
+- Failures are listed by slide in `datasets/processed/final/` rather than shown as example images.
+- The agent's English reports were not reviewed by a clinician.
 
 ## Final test protocol (fixed 2 Nov 2026, before any test data was scored)
 

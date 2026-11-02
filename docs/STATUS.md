@@ -17,8 +17,12 @@ The audit catches a serious problem found today, over-counting on sparse slides,
 - **SAM 3 finds white blood cells reliably:** F1 0.95 on NIH tuning fields.
 - **Parasites are no longer found by SAM.** The API cannot do exemplar prompting (tested), and a free offline detector finds far more parasites than SAM does.
 - **The full pipeline runs end to end** in the new `hybrid` mode (SAM for white blood cells, our verifier for parasites) and in the offline `verified` mode.
-- About **US$5** of the US$150 API credit has been spent (about 2,000 SAM requests).
-- All checks pass (191 Python tests at 97% coverage, and 11 Android tests, as of 2 Nov). Nothing since 28 Oct is committed yet.
+- About **US$18** of the US$150 API credit has been spent (about 7,200 SAM requests, most of them in the final test run).
+- **Final test results (2 Nov):**
+  - On held-out NIH patients: parasite F1 0.80, and density within 2× of the expert on 19 of 24 slides.
+  - On UDOM test: parasite F1 0.48.
+  - Weak spots: the slide-level negative/positive call, and NM-AIST, which failed because of image scale. See step 15.
+- All checks pass (191 Python tests at 97% coverage, and 11 Android tests, as of 2 Nov). Pushed on 2 Nov as branch `feat/agent-tracking-android`.
 
 ## Where we are against the plan
 
@@ -295,14 +299,30 @@ Full tables: [calibration/verifier.md](calibration/verifier.md).
   - Two truncated button labels were fixed.
   - The timeline's connecting line was fixed after the last screenshot, so it has not been seen on screen.
 
-### 15. Final test-set scoring (in progress, started 2 Nov)
+### 15. Final test-set scoring (done 2 Nov)
 
 - The user asked for the one-time scoring of the frozen test sets.
 - The protocol was written into [EVALUATION.md](EVALUATION.md#final-test-protocol-fixed-2-nov-2026-before-any-test-data-was-scored) before any test image was run. It fixes the sets, the samples, the metrics and the decision rules.
 - **Slide and image calls use thresholds chosen on development data.** Under the WHO rule, a slide reads negative only after 100 clean fields, so with any false positives every uninfected slide would read positive.
 - **Script:** `scripts/final_eval.py`. It caches every detection under `datasets/processed/final/`, which is gitignored.
 - Six workers ran out of memory on 12 MP fields; the run uses 3.
-- Expected SAM cost: about US$13.
+- **Ran:** 9,665 field results, then the Muse Spark agent and audit on all 31 NIH test slides. The run hit 27 transient DNS failures, and the client's retries recovered every one. No job failed.
+- **Cost:** 5,122 new SAM requests, about US$12.80, so about US$18 of the US$150 credit has been spent in total. Muse Spark calls are not cached, so they are not in this count.
+- **Results:** [calibration/final_test.md](calibration/final_test.md); summary and ablation table in [EVALUATION.md](EVALUATION.md#ablations).
+
+  | Measure (test) | Hybrid |
+  | --- | --- |
+  | Parasite F1, NIH / UDOM | 0.80 / 0.48 |
+  | WBC F1, NIH | 0.90 |
+  | Slide density: median ratio, within ±25%, within 2× | 1.02, 11/24, 19/24 (*r* = 0.93) |
+  | Slide call (*T* = 26.2): sensitivity / specificity | 12/24 = 50% / 6/7 = 86% |
+  | Audit flag: over-counted / correct / uninfected slides | 8/8 / 5/16 / 7/7 |
+  | NM-AIST image call | 0/400 sensitivity, AUC 0.52 |
+
+- **What changes in the pitch.**
+  - Darubini estimates density on a slide already read positive. It is not a negative/positive screen: every uninfected slide has false positives, and the count rule's sensitivity fell from 71% in development to 50% on test.
+  - The audit is a review trigger that never let an over-count through.
+  - NM-AIST failed because of scale (whole 4K frames) and an image-format confound between its folders. This is reported as is, not fixed on the test set.
 
 ## Open issues
 
@@ -329,7 +349,7 @@ Full tables: [calibration/verifier.md](calibration/verifier.md).
 
 1. **Commit the trained verifier.** `models/` is ignored by git. The demo and a fresh clone need `models/parasite_verifier.npz` (0.2 MB). Either un-ignore that one file or publish it as a release asset.
 2. **Default segmenter.** `.env` still says `baseline`. `hybrid` is the best setting with the API and `verified` the best offline.
-3. **Commit this work.** Everything since 28 Oct is uncommitted.
+3. **Merge the branch.** Everything up to 2 Nov is pushed as `feat/agent-tracking-android` (4 commits) and is waiting for a pull request into `main`.
 
 ## What's next
 
@@ -338,7 +358,7 @@ Full tables: [calibration/verifier.md](calibration/verifier.md).
 | 1 | Install the Android app on a real phone and count a slide over Wi-Fi (photos from the datasets on screen are fine without a microscope) | A slide captured and reported from the phone |
 | 2 | Real panning video for tracking: any phone clip of a slide, or a pan synthesised from a full NIH field (`darubini track --synthetic`) | Tracking demo clip recorded; duplicates checked by hand |
 | 3 | Improve UDOM parasite F1 (0.44 on the larger check half) | F1 on the `check` half clearly above 0.44 |
-| 4 | Final test-set run, once everything is frozen: UDOM test (30%), NIH test, NM-AIST | Ablation table in EVALUATION.md filled |
+| Done | ~~Final test-set run~~ (2 Nov, step 15) | Ablation table in EVALUATION.md filled |
 | Done | ~~Muse Spark agent~~, ~~SAM tracking~~, ~~phone capture app~~, ~~native Android app~~, ~~localised quality flags~~, ~~audit repeatability~~, ~~train/test split~~, ~~Figma restyle~~ | 30 Oct-2 Nov |
 
 ## Known risks
