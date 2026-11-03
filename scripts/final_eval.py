@@ -14,6 +14,7 @@ metrics never re-run a model.
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
 import math
 import random
@@ -29,7 +30,7 @@ import numpy as np
 from darubini.config import get_settings
 from darubini.data.annotations import parse_nlm_thick
 from darubini.data.fields import nlm_thick_fields, patient_split, udom_fields
-from darubini.evaluation import match_centres, slide_accuracy
+from darubini.evaluation import match_centres
 from darubini.pipeline import load_image
 from darubini.quality import assess
 from darubini.types import BoundingBox, Detection, ObjectClass
@@ -120,7 +121,9 @@ def truths(name: str) -> dict[str, list[Detection]]:
         return {i.key: t for i, t in uninfected_fields(split)}
     if name.startswith("nih"):
         split = "val" if name == "nih_val" else "test"
-        return {str(f.image): list(f.truth) for f in nlm_thick_fields(RAW / "nih-thick-pf-150", split)}
+        return {
+            str(f.image): list(f.truth) for f in nlm_thick_fields(RAW / "nih-thick-pf-150", split)
+        }
     if name.startswith("udom"):
         return {str(f.image): list(f.truth) for f in udom_fields(RAW / "udom-tz-thick", "test")}
     return {}
@@ -148,7 +151,10 @@ def _run(item: Item) -> dict[str, object]:
         "infected": item.infected,
         "usable": quality.usable,
         "flags": list(quality.flags),
-        "dets": [[d.cls.value, d.box.x_min, d.box.y_min, d.box.x_max, d.box.y_max, round(d.score, 4)] for d in dets],
+        "dets": [
+            [d.cls.value, d.box.x_min, d.box.y_min, d.box.x_max, d.box.y_max, round(d.score, 4)]
+            for d in dets
+        ],
     }
 
 
@@ -167,9 +173,10 @@ def detect(name: str, segmenter: str, workers: int) -> None:
     todo = [i for i in items(name) if i.key not in load_cache(name, segmenter)]
     print(f"{name} / {segmenter}: {len(todo)} images to run", flush=True)
     OUT.mkdir(parents=True, exist_ok=True)
-    with cache_path(name, segmenter).open("a", encoding="utf-8") as fh, ProcessPoolExecutor(
-        workers, initializer=_init, initargs=(segmenter,)
-    ) as pool:
+    with (
+        cache_path(name, segmenter).open("a", encoding="utf-8") as fh,
+        ProcessPoolExecutor(workers, initializer=_init, initargs=(segmenter,)) as pool,
+    ):
         for n, row in enumerate(pool.map(_run, todo, chunksize=2), 1):
             fh.write(json.dumps(row) + "\n")
             fh.flush()
@@ -181,7 +188,11 @@ def detect(name: str, segmenter: str, workers: int) -> None:
 
 
 def dets_of(row: dict, cls: ObjectClass) -> list[Detection]:
-    return [Detection(ObjectClass(c), BoundingBox(*box), s) for c, *box, s in row["dets"] if c == cls.value]
+    return [
+        Detection(ObjectClass(c), BoundingBox(*box), s)
+        for c, *box, s in row["dets"]
+        if c == cls.value
+    ]
 
 
 def field_scores(name: str, segmenter: str) -> dict[str, dict[str, float]]:
@@ -200,8 +211,15 @@ def field_scores(name: str, segmenter: str) -> dict[str, dict[str, float]]:
         rec = tp / (tp + fn) if tp + fn else 0.0
         f1 = 2 * prec * rec / (prec + rec) if prec + rec else 0.0
         e = np.asarray(errors, dtype=float)
-        out[cls.value] = {"precision": prec, "recall": rec, "f1": f1, "mae": float(np.abs(e).mean()),
-                          "bias": float(e.mean()), "labelled": tp + fn, "fields": len(cache)}
+        out[cls.value] = {
+            "precision": prec,
+            "recall": rec,
+            "f1": f1,
+            "mae": float(np.abs(e).mean()),
+            "bias": float(e.mean()),
+            "labelled": tp + fn,
+            "fields": len(cache),
+        }
     return out
 
 
@@ -227,7 +245,11 @@ def per_slide(name: str, segmenter: str) -> dict[str, dict[str, float]]:
 def choose_threshold(pos: list[float], neg: list[float]) -> float:
     """Youden-optimal cut-off, midway between observed values; ties go to the lowest."""
     values = sorted(set(pos) | set(neg))
-    cuts = [v / 2 for v in values[:1]] + [(a + b) / 2 for a, b in zip(values, values[1:])] + [values[-1] + 1]
+    cuts = (
+        [v / 2 for v in values[:1]]
+        + [(a + b) / 2 for a, b in itertools.pairwise(values)]
+        + [values[-1] + 1]
+    )
     best, best_j = cuts[0], -2.0
     for c in cuts:
         j = sum(v >= c for v in pos) / len(pos) + sum(v < c for v in neg) / len(neg) - 1
@@ -258,36 +280,55 @@ def field_counts(name: str, segmenter: str, positive_only_labelled: bool) -> lis
     cache, truth = load_cache(name, segmenter), truths(name)
     out = []
     for key, row in cache.items():
-        if positive_only_labelled and not any(d.cls is ObjectClass.PARASITE for d in truth.get(key, [])):
+        if positive_only_labelled and not any(
+            d.cls is ObjectClass.PARASITE for d in truth.get(key, [])
+        ):
             continue
         out.append(float(len(dets_of(row, ObjectClass.PARASITE))))
     return out
 
 
 def report() -> str:
-    lines = ["# Final test results", "",
-             "Generated by `scripts/final_eval.py report` under the protocol fixed in "
-             "[EVALUATION.md](../EVALUATION.md#final-test-protocol-fixed-2-nov-2026-before-any-test-data-was-scored). "
-             "Ranges are Wilson 95% intervals.", ""]
+    lines = [
+        "# Final test results",
+        "",
+        "Generated by `scripts/final_eval.py report` under the protocol fixed in "
+        "[EVALUATION.md](../EVALUATION.md#final-test-protocol-fixed-2-nov-2026-before-any-test-data-was-scored). "
+        "Ranges are Wilson 95% intervals.",
+        "",
+    ]
 
     lines += ["## 1. Field level: detection and count agreement", ""]
-    for name, label in (("nih_test", "NIH test (24 patients)"), ("udom_test", "UDOM test (180 photos)"),
-                        ("nih_test_s60", "NIH test, 60-field sample"), ("udom_test_s300", "UDOM test, 300-tile sample")):
+    for name, label in (
+        ("nih_test", "NIH test (24 patients)"),
+        ("udom_test", "UDOM test (180 photos)"),
+        ("nih_test_s60", "NIH test, 60-field sample"),
+        ("udom_test_s300", "UDOM test, 300-tile sample"),
+    ):
         segs = ["sam3"] if name.endswith(("s60", "s300")) else ["baseline", "verified", "hybrid"]
         segs = [s for s in segs if cache_path(name, s).is_file()]
         if not segs:
             continue
-        lines += [f"### {label}", "", "| Segmenter | Class | Fields | Labelled | Precision | Recall | F1 | Count MAE | Count bias |",
-                  "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"]
+        lines += [
+            f"### {label}",
+            "",
+            "| Segmenter | Class | Fields | Labelled | Precision | Recall | F1 | Count MAE | Count bias |",
+            "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
         for seg in segs:
             for cls, m in field_scores(name, seg).items():
-                lines.append(f"| {seg} | {cls} | {m['fields']} | {m['labelled']} | {m['precision']:.2f} | {m['recall']:.2f} | "
-                             f"{m['f1']:.2f} | {m['mae']:.1f} | {m['bias']:+.1f} |")
+                lines.append(
+                    f"| {seg} | {cls} | {m['fields']} | {m['labelled']} | {m['precision']:.2f} | {m['recall']:.2f} | "
+                    f"{m['f1']:.2f} | {m['mae']:.1f} | {m['bias']:+.1f} |"
+                )
         lines.append("")
 
-    lines += ["## 2. Slide density (24 infected NIH test patients, usable fields)", "",
-              "| Segmenter | Median predicted/expert | Within ±25% | Within 2× | Pearson r (log10 density) |",
-              "| --- | ---: | ---: | ---: | ---: |"]
+    lines += [
+        "## 2. Slide density (24 infected NIH test patients, usable fields)",
+        "",
+        "| Segmenter | Median predicted/expert | Within ±25% | Within 2× | Pearson r (log10 density) |",
+        "| --- | ---: | ---: | ---: | ---: |",
+    ]
     for seg in ("verified", "hybrid"):
         if not cache_path("nih_test", seg).is_file():
             continue
@@ -300,14 +341,19 @@ def report() -> str:
                 logs.append((math.log10(max(pred, 1)), math.log10(true)))
         r = np.asarray(ratios)
         n = len(r)
-        corr = float(np.corrcoef(*zip(*logs))[0, 1]) if n > 2 else float("nan")
-        lines.append(f"| {seg} | {np.median(r):.2f} | {rate(int(((r >= 0.75) & (r <= 1.25)).sum()), n)} | "
-                     f"{rate(int(((r >= 0.5) & (r <= 2)).sum()), n)} | {corr:.2f} |")
+        corr = float(np.corrcoef(*zip(*logs, strict=False))[0, 1]) if n > 2 else float("nan")
+        lines.append(
+            f"| {seg} | {np.median(r):.2f} | {rate(int(((r >= 0.75) & (r <= 1.25)).sum()), n)} | "
+            f"{rate(int(((r >= 0.5) & (r <= 2)).sum()), n)} | {corr:.2f} |"
+        )
     lines.append("")
 
-    lines += ["## 3. Slide call: infected against uninfected (31 NIH test slides)", "",
-              "| Segmenter | Rule | Threshold (from development slides) | Sensitivity | Specificity |",
-              "| --- | --- | ---: | --- | --- |"]
+    lines += [
+        "## 3. Slide call: infected against uninfected (31 NIH test slides)",
+        "",
+        "| Segmenter | Rule | Threshold (from development slides) | Sensitivity | Specificity |",
+        "| --- | --- | ---: | --- | --- |",
+    ]
     for seg in ("verified", "hybrid"):
         need = [("nih_val", seg), ("unin_dev", seg), ("nih_test", seg), ("unin_test", seg)]
         if not all(cache_path(*n).is_file() for n in need):
@@ -319,20 +365,30 @@ def report() -> str:
         neg = [mean_per_field(s) for s in per_slide("unin_test", seg).values()]
         for rule, cut in (("any parasite", 1e-9), ("mean parasites per field ≥ T", t)):
             tp, tn = sum(v >= cut for v in pos), sum(v < cut for v in neg)
-            lines.append(f"| {seg} | {rule} | {'–' if rule == 'any parasite' else f'{t:.2f}'} | {rate(tp, len(pos))} | {rate(tn, len(neg))} |")
+            lines.append(
+                f"| {seg} | {rule} | {'–' if rule == 'any parasite' else f'{t:.2f}'} | {rate(tp, len(pos))} | {rate(tn, len(neg))} |"
+            )
     lines.append("")
 
-    lines += ["## 4. Image call on NM-AIST (Tanzania, 400 infected + 400 uninfected thick-film images)", "",
-              "| Segmenter | Threshold k (from development fields) | Sensitivity | Specificity |", "| --- | ---: | --- | --- |"]
+    lines += [
+        "## 4. Image call on NM-AIST (Tanzania, 400 infected + 400 uninfected thick-film images)",
+        "",
+        "| Segmenter | Threshold k (from development fields) | Sensitivity | Specificity |",
+        "| --- | ---: | --- | --- |",
+    ]
     for seg in ("verified", "hybrid"):
         need = [("nih_val", seg), ("unin_dev", seg), ("nm_aist", seg)]
         if not all(cache_path(*n).is_file() for n in need):
             continue
-        k = choose_threshold(field_counts("nih_val", seg, True), field_counts("unin_dev", seg, False))
+        k = choose_threshold(
+            field_counts("nih_val", seg, True), field_counts("unin_dev", seg, False)
+        )
         cache = load_cache("nm_aist", seg)
         pos = [len(dets_of(r, ObjectClass.PARASITE)) for r in cache.values() if r["infected"]]
         neg = [len(dets_of(r, ObjectClass.PARASITE)) for r in cache.values() if not r["infected"]]
-        lines.append(f"| {seg} | {k:.1f} | {rate(sum(v >= k for v in pos), len(pos))} | {rate(sum(v < k for v in neg), len(neg))} |")
+        lines.append(
+            f"| {seg} | {k:.1f} | {rate(sum(v >= k for v in pos), len(pos))} | {rate(sum(v < k for v in neg), len(neg))} |"
+        )
     lines.append("")
 
     agent = OUT / "agent_nih_test.jsonl"
@@ -349,17 +405,29 @@ def agent_section(rows: list[dict]) -> list[str]:
     over = [r for r in infected if r.get("ratio") and r["ratio"] >= 1.5]
     fine = [r for r in infected if r.get("ratio") and r["ratio"] < 1.5]
     out = ["| Measure | Result |", "| --- | --- |"]
-    out.append(f"| Agent finished by itself (not the fallback) | {rate(sum(r['finished_by_agent'] for r in rows), len(rows))} |")
-    out.append(f"| Fields excluded by the agent | {sum(r['excluded'] for r in rows)} of {sum(r['examined'] for r in rows)} examined |")
+    out.append(
+        f"| Agent finished by itself (not the fallback) | {rate(sum(r['finished_by_agent'] for r in rows), len(rows))} |"
+    )
+    out.append(
+        f"| Fields excluded by the agent | {sum(r['excluded'] for r in rows)} of {sum(r['examined'] for r in rows)} examined |"
+    )
     ar = np.asarray([r["agent_ratio"] for r in infected if r.get("agent_ratio")])
     if len(ar):
-        out.append(f"| Agent density, median predicted/expert (infected) | {np.median(ar):.2f}; within ±25%: "
-                   f"{rate(int(((ar >= 0.75) & (ar <= 1.25)).sum()), len(ar))} |")
+        out.append(
+            f"| Agent density, median predicted/expert (infected) | {np.median(ar):.2f}; within ±25%: "
+            f"{rate(int(((ar >= 0.75) & (ar <= 1.25)).sum()), len(ar))} |"
+        )
     for label, key in (("agent run", "agent_flag"), ("audit alone", "audit_flag")):
-        out.append(f"| Flag ({label}) on slides over-counted ≥1.5× | {rate(sum(bool(r.get(key)) for r in over), len(over))} |")
-        out.append(f"| Flag ({label}) on infected slides counted within 1.5× | {rate(sum(bool(r.get(key)) for r in fine), len(fine))} |")
-        out.append(f"| Flag ({label}) on uninfected slides (sent for review) | {rate(sum(bool(r.get(key)) for r in clean), len(clean))} |")
-    return out + [""]
+        out.append(
+            f"| Flag ({label}) on slides over-counted ≥1.5× | {rate(sum(bool(r.get(key)) for r in over), len(over))} |"
+        )
+        out.append(
+            f"| Flag ({label}) on infected slides counted within 1.5× | {rate(sum(bool(r.get(key)) for r in fine), len(fine))} |"
+        )
+        out.append(
+            f"| Flag ({label}) on uninfected slides (sent for review) | {rate(sum(bool(r.get(key)) for r in clean), len(clean))} |"
+        )
+    return [*out, ""]
 
 
 # ---------------------------------------------------------------- agent
@@ -380,8 +448,15 @@ def run_agent() -> None:
     model = s.meta_reasoning_model
     pipeline = Pipeline(get_segmenter(s.model_copy(update={"segmenter": "verified"})))
     out = OUT / "agent_nih_test.jsonl"
-    done = {json.loads(x)["slide"] for x in out.read_text(encoding="utf-8").splitlines()} if out.is_file() else set()
-    caches = {"nih_test": load_cache("nih_test", "hybrid"), "unin_test": load_cache("unin_test", "hybrid")}
+    done = (
+        {json.loads(x)["slide"] for x in out.read_text(encoding="utf-8").splitlines()}
+        if out.is_file()
+        else set()
+    )
+    caches = {
+        "nih_test": load_cache("nih_test", "hybrid"),
+        "unin_test": load_cache("unin_test", "hybrid"),
+    }
     for name, cache in caches.items():
         slides: dict[str, list[dict]] = defaultdict(list)
         for row in cache.values():
@@ -407,37 +482,61 @@ def run_agent() -> None:
                 tw += sum(d.cls is ObjectClass.WBC for d in t)
             crops = [c for _, f in fields for c in f.crops]
             audit = MuseAuditor(client, model).audit(crops) if crops else None
-            session = SlideSession(pipeline, fields, reviewer=MuseReviewer(client, model), auditor=MuseAuditor(client, model))
+            session = SlideSession(
+                pipeline,
+                fields,
+                reviewer=MuseReviewer(client, model),
+                auditor=MuseAuditor(client, model),
+            )
             res = CountingAgent(client, model).run(session, "en")
-            p_all = sum(sum(d.cls is ObjectClass.PARASITE for d in f.result.detections) for _, f in fields)
-            w_all = sum(sum(d.cls is ObjectClass.WBC for d in f.result.detections) for _, f in fields)
+            p_all = sum(
+                sum(d.cls is ObjectClass.PARASITE for d in f.result.detections) for _, f in fields
+            )
+            w_all = sum(
+                sum(d.cls is ObjectClass.WBC for d in f.result.detections) for _, f in fields
+            )
             true_density = 8000 * tp_ / tw if tw and tp_ else None
             row = {
-                "slide": slide, "infected": name == "nih_test", "examined": res.count.fields_examined,
-                "excluded": len(res.excluded), "finished_by_agent": res.finished_by_agent,
-                "agent_density": res.count.density_per_ul, "agent_flag": bool(res.audit and res.audit.flagged),
-                "audit_flag": bool(audit and audit.flagged), "audit_share": audit.confirmed_share if audit else None,
+                "slide": slide,
+                "infected": name == "nih_test",
+                "examined": res.count.fields_examined,
+                "excluded": len(res.excluded),
+                "finished_by_agent": res.finished_by_agent,
+                "agent_density": res.count.density_per_ul,
+                "agent_flag": bool(res.audit and res.audit.flagged),
+                "audit_flag": bool(audit and audit.flagged),
+                "audit_share": audit.confirmed_share if audit else None,
                 "ratio": (8000 * p_all / w_all) / true_density if true_density and w_all else None,
-                "agent_ratio": (res.count.density_per_ul / true_density) if true_density and res.count.density_per_ul else None,
+                "agent_ratio": (res.count.density_per_ul / true_density)
+                if true_density and res.count.density_per_ul
+                else None,
                 "tool_calls": len(res.steps),
             }
             with out.open("a", encoding="utf-8") as fh:
                 fh.write(json.dumps(row) + "\n")
-            print(slide, {k: row[k] for k in ("examined", "excluded", "agent_flag", "audit_flag", "ratio")}, flush=True)
+            print(
+                slide,
+                {k: row[k] for k in ("examined", "excluded", "agent_flag", "audit_flag", "ratio")},
+                flush=True,
+            )
 
 
 # ---------------------------------------------------------------- main
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     sub = ap.add_subparsers(dest="cmd", required=True)
     d = sub.add_parser("detect")
     d.add_argument("set")
     d.add_argument("segmenter", choices=["baseline", "verified", "hybrid", "sam3"])
     d.add_argument("--workers", type=int, default=6)
     for p in (d, sub.add_parser("agent"), sub.add_parser("report")):
-        p.add_argument("--final-test", action="store_true", help="confirm scoring the frozen test sets")
+        p.add_argument(
+            "--final-test", action="store_true", help="confirm scoring the frozen test sets"
+        )
     args = ap.parse_args()
     if not args.final_test and (args.cmd != "detect" or args.set in TEST_SETS):
         print("error: this touches the frozen test sets; pass --final-test to confirm")

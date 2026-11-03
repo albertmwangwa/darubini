@@ -24,7 +24,7 @@ The design has five screens:
 **Visual design.** Since 2 Nov the app uses the design language of the *Credit Design* Figma system, adopted as Darubini's own:
 
 - Plus Jakarta Sans;
-- deep green `#215732` with lime accents;
+- the Darubini Proposal colours (since 3 Nov): blue `#2463EB` on slate, green for success and stain purple for info;
 - white cards with hairline borders;
 - pill buttons;
 - status shown as colour plus a word;
@@ -55,6 +55,7 @@ Versions:
    - **Photograph field** uses the phone's camera app.
    - **Record a pan** records up to 8 s of video.
    - The gallery button in the top bar sends an existing photo or clip.
+   - The microphone button takes voice commands through Muse Voice Transcribe: tap, say "next field", "retake", "finish" or "note" and what you see, then tap again. Spoken notes appear on the report.
 4. Tap **Finish slide** when the banner says the count is complete.
 
 Notes:

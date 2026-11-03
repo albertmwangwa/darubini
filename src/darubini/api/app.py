@@ -22,6 +22,7 @@ from darubini.api.sessions import (
     SessionStore,
     add_clip,
     add_field,
+    add_voice,
     running_facts,
     start_report,
 )
@@ -33,6 +34,7 @@ from darubini.tracking import SamTracker, ShiftTracker, Tracker
 
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 MAX_VIDEO_BYTES = 60 * 1024 * 1024
+MAX_AUDIO_BYTES = 10 * 1024 * 1024
 MAX_FIELDS = 200
 #: Clips are sampled down to this many frames before tracking.
 MAX_CLIP_FRAMES = 60
@@ -201,6 +203,31 @@ async def capture_clip(
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except MetaApiError as exc:
         raise HTTPException(status_code=502, detail=f"tracking failed: {exc}") from exc
+
+
+@app.post("/v1/sessions/{session_id}/voice")
+async def voice_command(
+    session_id: str, file: Annotated[UploadFile, File(description="A push-to-talk recording")]
+) -> dict[str, Any]:
+    """Transcribe a spoken command with Muse Voice Transcribe and say what it asks for."""
+    from darubini.voice import KEYWORDS, parse_command, to_wav
+
+    session = _session(session_id)
+    client = _client()
+    if client is None:
+        raise HTTPException(status_code=503, detail="voice needs the Meta Model API")
+    data = await file.read(MAX_AUDIO_BYTES + 1)
+    if len(data) > MAX_AUDIO_BYTES:
+        raise HTTPException(status_code=413, detail=f"{file.filename}: recording too large")
+    try:
+        wav = to_wav(data)
+    except ValueError as exc:
+        raise HTTPException(status_code=415, detail=f"{file.filename}: {exc}") from exc
+    try:
+        transcript = client.transcribe(wav, get_settings().meta_voice_model, keywords=KEYWORDS)
+    except MetaApiError as exc:
+        raise HTTPException(status_code=502, detail=f"transcription failed: {exc}") from exc
+    return add_voice(session, parse_command(transcript))
 
 
 @app.post("/v1/sessions/{session_id}/report")

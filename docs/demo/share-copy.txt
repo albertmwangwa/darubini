@@ -1,0 +1,1 @@
+Malaria is still counted by hand, one parasite at a time. Darubini turns a phone on the eyepiece into a counting copilot: SAM 3.1 finds and tracks the cells, Muse Spark audits the count and writes the report in Kiswahili. On patients it never saw: parasite F1 0.80, 19 of 24 slides within 2x of the expert. github.com/albertmwangwa/darubini

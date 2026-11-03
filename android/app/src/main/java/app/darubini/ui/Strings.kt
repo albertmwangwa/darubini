@@ -87,6 +87,14 @@ data class Strings(
     val photoButton: String,
     val clipButton: String,
     val newSlide: String,
+    val talk: String,
+    val stopTalk: String,
+    val listening: String,
+    val listeningBody: String,
+    val noteSaved: (String) -> String,
+    val notUnderstood: (String) -> String,
+    val micDenied: String,
+    val voiceNotes: String,
 ) {
     fun tool(name: String): String = tools[name] ?: name
 
@@ -192,6 +200,14 @@ val English = Strings(
     photoButton = "Photograph",
     clipButton = "Record pan",
     newSlide = "New slide",
+    talk = "Speak a command",
+    stopTalk = "Send command",
+    listening = "Listening",
+    listeningBody = "Say \"next field\", \"retake\", \"finish\" or \"note\" and what you see. Tap the microphone again to send.",
+    noteSaved = { n -> "Note saved: $n" },
+    notUnderstood = { t -> if (t.isBlank()) "Nothing heard. Try again." else "Heard \"$t\": not a command." },
+    micDenied = "Microphone permission is needed for voice commands.",
+    voiceNotes = "Spoken notes",
 )
 
 val Kiswahili = Strings(
@@ -286,6 +302,14 @@ val Kiswahili = Strings(
     photoButton = "Piga picha",
     clipButton = "Rekodi video",
     newSlide = "Slaidi mpya",
+    talk = "Toa amri kwa sauti",
+    stopTalk = "Tuma amri",
+    listening = "Inasikiliza",
+    listeningBody = "Sema \"sehemu inayofuata\", \"piga tena\", \"maliza\" au \"kumbuka\" na unachoona. Gusa maikrofoni tena kutuma.",
+    noteSaved = { n -> "Kumbukumbu imehifadhiwa: $n" },
+    notUnderstood = { t -> if (t.isBlank()) "Hakuna kilichosikika. Jaribu tena." else "Imesikika \"$t\": si amri." },
+    micDenied = "Ruhusa ya maikrofoni inahitajika kwa amri za sauti.",
+    voiceNotes = "Kumbukumbu za sauti",
 )
 
 fun stringsFor(code: String): Strings = if (code == "sw") Kiswahili else English

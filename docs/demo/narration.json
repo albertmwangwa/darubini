@@ -1,0 +1,111 @@
+{
+  "voice": "af_bella",
+  "speed": 1.08,
+  "lines": [
+    {
+      "scene": "cold",
+      "at": 1.0,
+      "text": "Right now, somewhere in Africa, a technician is counting malaria parasites. By hand. One by one. Against two hundred white blood cells. Field after field. Slide after slide."
+    },
+    {
+      "scene": "issue",
+      "at": 0.8,
+      "text": "It's slow. It's exhausting. And two experts can count the same slide and still disagree."
+    },
+    {
+      "scene": "issue",
+      "at": 7.8,
+      "text": "Six hundred and ten thousand people died of malaria in 2024. Tanzania ranks fourth in the world. The microscopes are there. The time isn't."
+    },
+    {
+      "scene": "reveal",
+      "at": 0.9,
+      "text": "So we built Darubini. A phone on the eyepiece. A counting copilot, powered by Meta's models."
+    },
+    {
+      "scene": "app",
+      "at": 0.8,
+      "text": "Snap a field, or just pan across the slide. Blurry? Rejected, instantly."
+    },
+    {
+      "scene": "app",
+      "at": 6.4,
+      "text": "Hands busy? Just say it. Next field. Retake. Finish. Muse Voice Transcribe does the rest."
+    },
+    {
+      "scene": "app",
+      "at": 13.1,
+      "text": "And Muse Spark double-checks every count before you see a report."
+    },
+    {
+      "scene": "detect",
+      "at": 0.8,
+      "text": "First, we catch every spot that takes up the stain."
+    },
+    {
+      "scene": "detect",
+      "at": 5.8,
+      "text": "Our verifier keeps only the real parasites."
+    },
+    {
+      "scene": "detect",
+      "at": 9.4,
+      "text": "And SAM 3.1 finds every white blood cell from one word. Thirty-four parasites. The expert counted thirty-five."
+    },
+    {
+      "scene": "track",
+      "at": 0.8,
+      "text": "Panning? SAM 3.1 tracks every single cell, so nothing gets counted twice. Twelve parasites. Not thirty-one."
+    },
+    {
+      "scene": "train",
+      "at": 0.6,
+      "text": "We trained it the right way. Split by patient, never by image. Test set locked away."
+    },
+    {
+      "scene": "train",
+      "at": 6.4,
+      "text": "Three hundred NIH fields. Sixteen hundred Tanzanian tiles. F1 jumped from zero point two nine to zero point eight one."
+    },
+    {
+      "scene": "train",
+      "at": 15.55,
+      "text": "Protocol frozen first. Then the test set, scored exactly once."
+    },
+    {
+      "scene": "agent",
+      "at": 0.6,
+      "text": "Then the Muse Spark agent takes over. It checks image quality, audits its own work, applies the WHO rule, and writes the report in Kiswahili."
+    },
+    {
+      "scene": "agent",
+      "at": 10.9,
+      "text": "On an unseen slide: sixteen thousand three hundred per microlitre. The expert: sixteen thousand one hundred."
+    },
+    {
+      "scene": "results",
+      "at": 0.8,
+      "text": "The results, on patients it never saw. Parasite F1: zero point eight. Nineteen of twenty-four slides within twice the expert's density. And the audit caught every single over-count."
+    },
+    {
+      "scene": "results",
+      "at": 13.4,
+      "text": "Every part adds accuracy. Together, they count best."
+    },
+    {
+      "scene": "honest",
+      "at": 0.6,
+      "text": "To be clear: it counts. It doesn't diagnose. A microscopist confirms every result."
+    },
+    {
+      "scene": "future",
+      "at": 0.6,
+      "text": "And this is just the start. Tuberculosis. Schistosomiasis. Sleeping sickness. Even simulated TB cultures, to train colony counting."
+    },
+    {
+      "scene": "outro",
+      "at": 0.9,
+      "text": "Darubini. Count faster. Count once. Count with confidence."
+    }
+  ]
+}

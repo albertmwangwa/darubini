@@ -22,7 +22,7 @@ class Segmenter(Protocol):
         ...
 
 
-SEGMENTERS = ("baseline", "sam3", "verified", "hybrid")
+SEGMENTERS = ("baseline", "sam3", "verified", "hybrid", "confirmed")
 
 
 def get_segmenter(settings: Settings | None = None) -> Segmenter:
@@ -32,6 +32,7 @@ def get_segmenter(settings: Settings | None = None) -> Segmenter:
     - ``sam3``: SAM 3 text prompts for both classes.
     - ``verified``: parasite candidates kept by the verifier; stain-blob WBCs. Offline.
     - ``hybrid``: SAM 3 finds WBCs; the verifier keeps parasite candidates.
+    - ``confirmed``: hybrid, then SAM 3.1 box prompts confirm each kept parasite.
     """
     s = settings or get_settings()
     if s.segmenter not in SEGMENTERS:
@@ -65,4 +66,16 @@ def get_segmenter(settings: Settings | None = None) -> Segmenter:
         concepts={"cell": ObjectClass.WBC},
         class_min_score=TUNED_MIN_SCORES,
     )
-    return VerifiedSegmenter(CandidateDetector(), ParasiteVerifier.load(s.verifier_path), wbc=wbc)
+    verifier = ParasiteVerifier.load(s.verifier_path)
+    if s.segmenter == "confirmed":
+        from darubini.segmentation.confirm import (
+            CONFIRM_MIN_CONFIDENCE,
+            BoxConfirmer,
+            ConfirmedSegmenter,
+        )
+
+        confirmer = BoxConfirmer(client, s.meta_segmentation_model)
+        return ConfirmedSegmenter(
+            CandidateDetector(), verifier, confirmer, wbc, CONFIRM_MIN_CONFIDENCE
+        )
+    return VerifiedSegmenter(CandidateDetector(), verifier, wbc=wbc)

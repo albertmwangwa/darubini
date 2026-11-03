@@ -75,7 +75,7 @@ ignore = ["D105", "D107", "D203", "D213"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "D", "S311"]
-"scripts/**" = ["D"]
+"scripts/**" = ["D", "E501", "S311", "RUF001"]  # Markdown table rows, seeded sampling, – and × in report text
 
 [tool.ruff.format]
 quote-style = "double"

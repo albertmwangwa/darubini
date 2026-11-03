@@ -104,6 +104,8 @@ private fun DarubiniApp(model: DarubiniViewModel) {
                     onPickedVideo = model::uploadPickedVideo,
                     onFinish = model::finishSlide,
                     onMessage = model::say,
+                    onVoice = model::toggleListening,
+                    onCameraOpened = model::cameraOpened,
                 )
                 Screen.Agent -> AgentScreen(state, padding, model::back) { model.go(Screen.Report) }
                 Screen.Report -> ReportScreen(state, padding, onClose = model::back, onAgain = model::startSlide)

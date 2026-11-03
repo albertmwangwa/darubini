@@ -17,8 +17,12 @@ The audit catches a serious problem found today, over-counting on sparse slides,
 - **SAM 3 finds white blood cells reliably:** F1 0.95 on NIH tuning fields.
 - **Parasites are no longer found by SAM.** The API cannot do exemplar prompting (tested), and a free offline detector finds far more parasites than SAM does.
 - **The full pipeline runs end to end** in the new `hybrid` mode (SAM for white blood cells, our verifier for parasites) and in the offline `verified` mode.
-- About **US$5** of the US$150 API credit has been spent (about 2,000 SAM requests).
-- All checks pass (191 Python tests at 97% coverage, and 11 Android tests, as of 2 Nov). Nothing since 28 Oct is committed yet.
+- About **US$21** of the US$150 API credit has been spent (about 8,200 SAM requests, most of them in the final test run; voice tests cost cents).
+- **Final test results (2 Nov):**
+  - On held-out NIH patients: parasite F1 0.80, and density within 2× of the expert on 19 of 24 slides.
+  - On UDOM test: parasite F1 0.48.
+  - Weak spots: the slide-level negative/positive call, and NM-AIST, which failed because of image scale. See step 15.
+- All checks pass (191 Python tests at 97% coverage, and 11 Android tests, as of 2 Nov). Pushed on 2 Nov as branch `feat/agent-tracking-android`.
 
 ## Where we are against the plan
 
@@ -295,14 +299,134 @@ Full tables: [calibration/verifier.md](calibration/verifier.md).
   - Two truncated button labels were fixed.
   - The timeline's connecting line was fixed after the last screenshot, so it has not been seen on screen.
 
-### 15. Final test-set scoring (in progress, started 2 Nov)
+### 15. Final test-set scoring (done 2 Nov)
 
 - The user asked for the one-time scoring of the frozen test sets.
 - The protocol was written into [EVALUATION.md](EVALUATION.md#final-test-protocol-fixed-2-nov-2026-before-any-test-data-was-scored) before any test image was run. It fixes the sets, the samples, the metrics and the decision rules.
 - **Slide and image calls use thresholds chosen on development data.** Under the WHO rule, a slide reads negative only after 100 clean fields, so with any false positives every uninfected slide would read positive.
 - **Script:** `scripts/final_eval.py`. It caches every detection under `datasets/processed/final/`, which is gitignored.
 - Six workers ran out of memory on 12 MP fields; the run uses 3.
-- Expected SAM cost: about US$13.
+- **Ran:** 9,665 field results, then the Muse Spark agent and audit on all 31 NIH test slides. The run hit 27 transient DNS failures, and the client's retries recovered every one. No job failed.
+- **Cost:** 5,122 new SAM requests, about US$12.80, so about US$18 of the US$150 credit has been spent in total. Muse Spark calls are not cached, so they are not in this count.
+- **Results:** [calibration/final_test.md](calibration/final_test.md); summary and ablation table in [EVALUATION.md](EVALUATION.md#ablations).
+
+  | Measure (test) | Hybrid |
+  | --- | --- |
+  | Parasite F1, NIH / UDOM | 0.80 / 0.48 |
+  | WBC F1, NIH | 0.90 |
+  | Slide density: median ratio, within ±25%, within 2× | 1.02, 11/24, 19/24 (*r* = 0.93) |
+  | Slide call (*T* = 26.2): sensitivity / specificity | 12/24 = 50% / 6/7 = 86% |
+  | Audit flag: over-counted / correct / uninfected slides | 8/8 / 5/16 / 7/7 |
+  | NM-AIST image call | 0/400 sensitivity, AUC 0.52 |
+
+- **What changes in the pitch.**
+  - Darubini estimates density on a slide already read positive. It is not a negative/positive screen: every uninfected slide has false positives, and the count rule's sensitivity fell from 71% in development to 50% on test.
+  - The audit is a review trigger that never let an over-count through.
+  - NM-AIST failed because of scale (whole 4K frames) and an image-format confound between its folders. This is reported as is, not fixed on the test set.
+
+### 16. Write-up: README results and model card (2 Nov)
+
+- **README:**
+  - The "Evaluation plan" section is now **Results**: the test ablation and what it can and cannot do.
+  - The "IoU ≥ 0.3" claim was wrong; detections are matched by centre.
+  - The split text now says NLM by patient and UDOM by photo.
+  - The header links [HACKATHON.md](HACKATHON.md).
+- **README "How it uses Meta AI"** lists only the models the code calls, with the file for each:
+  - SAM 3.1 images (`segmentation/sam.py`);
+  - SAM 3.1 video (`tracking.py`);
+  - Muse Spark (`agent.py`, `audit.py`, `meta/reviewer.py`).
+
+  The open-weights and Muse Code rows were removed. No open-weights call exists in the code, and Muse Code was a development tool, not part of the product.
+- **MODEL_CARD.md:**
+  - The data section is now correct: 70% of UDOM is used for adaptation, and NM-AIST is test only.
+  - Added a results table.
+  - Added three limitations from the test: it is not a screen; Tanzanian smears are harder; image scale must match one oil-immersion field per photo.
+- **Mismatch for the user to settle.** [HACKATHON.md](HACKATHON.md) and the plan describe three things that are not built:
+  - Muse Voice Transcribe control;
+  - SAM 3.1 box-prompt confirmation of candidates. The API does segment marked boxes, but parasites are confirmed by the verifier;
+  - open-weights report drafting.
+
+### 17. Tracking demo clip (2 Nov)
+
+- **What it is.** `scripts/tracking_demo.py` pans 90 frames across one NIH **tuning** field (TF54_CW43), never a test field. It counts the field in hybrid mode with SAM 3.1 video tracking.
+- **Outputs**, all in [`demo/`](demo/):
+  - [`tracking_demo.mp4`](demo/tracking_demo.mp4), 0.3 MB: each track boxed and numbered, with the running count of unique objects and a closing summary;
+  - [`tracking_contact.png`](demo/tracking_contact.png): six frames from the clip;
+  - [`tracking_demo.json`](demo/tracking_demo.json): the counts and the label check.
+- **Counts.** 12 unique parasites and 17 white cells, against 31 and 34 counted frame by frame. SAM 3.1 video cost US$0.08. The offline shift tracker gives the same counts.
+- **Duplicates checked against the expert labels** (automatic, instead of by hand):
+
+  | Duplicates | Parasites | White cells |
+  | --- | ---: | ---: |
+  | Across frames (tracking failures) | 0 | 0 |
+  | Within one frame (detector boxed one object twice) | 2 | 1 |
+
+  - Parasites: 9 of the 10 labelled in view were found, plus 1 track matching no label.
+  - White cells: SAM's "cell" prompt splits some lobed white cells into two or three boxes. That explains most of the 10 white-cell tracks matching no label. It is a detection error, visible in the clip at #24 to #26.
+- **Done when** (What's next row 2): met for a synthetic pan. Real phone video is still untested.
+
+### 18. Completing the plan: two-stage detection, voice, open weights (2 Nov, evening)
+
+The user asked to complete the implementation plan. Three Meta-tooling items were unbuilt; the API was read from Meta's docs first (voice API reference, SAM segmenting, Muse Spark Open deploy pages).
+
+- **Two-stage detection (plan day 3).**
+  - `MetaModelClient.segment_objects` sends up to 16 box prompts per request with `include_confidence`; corners are clamped (SAM rejects negatives, 400). `segmentation/confirm.py`: `BoxConfirmer` (1,024 px tiles) and `ConfirmedSegmenter` (segmenter `confirmed`: hybrid, then SAM confirms each kept parasite at *c* ≥ 0.70).
+  - **Development check** (`scripts/two_stage.py`, [calibration/two_stage.md](calibration/two_stage.md)), 20 NIH val fields and 150 UDOM `check` tiles, 986 SAM requests (about US$2.50):
+
+    | Rule | NIH val F1 | UDOM check F1 |
+    | --- | ---: | ---: |
+    | Candidates alone | 0.29 | 0.17 |
+    | Candidates + SAM box confirmation | 0.41 | 0.35 |
+    | Candidates + verifier | 0.84 | 0.43 |
+    | Candidates + verifier + SAM box confirmation | 0.85 | 0.43 |
+
+  - **Gate "two-stage beats either alone":** met against candidates alone and SAM's text prompt alone; not meaningfully against our verifier. SAM segments 99 to 100% of candidates with confidence 0.55 to 0.82: it confirms objectness, not parasites. `hybrid` stays the default.
+- **Muse Voice Transcribe (plan day 5).**
+  - `client.transcribe` (multipart `POST /asr/transcribe`, `muse-voice-transcribe-1.0`, keyword biasing); `voice.py` converts any audio PyAV reads to 16 kHz mono WAV and parses commands: next field, retake, finish, and "note …" (English and Kiswahili phrases).
+  - `POST /v1/sessions/{id}/voice`; spoken notes are kept on the session and returned with the report as `voice_notes`.
+  - **Live check:** synthetic English speech (Windows voice) gave exact transcripts for all four commands, through WAV and through AAC/M4A as the Android app records. **Kiswahili is not on the API's 25-language list**: an English voice reading "Sehemu inayofuata" came back as "See how many of weda" (with or without a Swahili language hint). Kiswahili voice is unconfirmed until a native speaker tries it.
+  - **Android:** a microphone button on Capture (tap to record, tap to send; RECORD_AUDIO asked at first use). "Next field" and "retake" open the camera, "finish" finishes the slide, notes show in a snackbar and on the Report screen. Builds and unit tests pass (13). **Checked on the emulator:** the permission prompt, the listening state ([screenshot](calibration/android_voice.png)), and a recording sent end to end; the emulator has no audio input, so the reply was "nothing heard". A spoken command on a real phone is still to do.
+  - **Web page:** the same button with `MediaRecorder`. A browser may refuse to open the camera this long after the tap; the photo button still works.
+- **Muse Spark Open (open weights).** `OPEN_WEIGHTS_BASE_URL` / `OPEN_WEIGHTS_API_KEY` / `OPEN_WEIGHTS_MODEL` (default `meta-models/muse-spark-open`) and `darubini analyse --narrate open|muse`. The narrative is dropped if it quotes a number the count did not produce. **Not run live: no Baseten, Fireworks or Modal key.**
+- Checks: 218 Python tests (97% coverage), ruff, mypy strict; Android unit tests and debug build.
+
+### 19. Demo video from the train/test results (3 Nov)
+
+- **Decision (user):** with no live lab session possible, the demo video uses the results from our own train/test split, in the style of a SaaS motion-graphics explainer. The reference reel, solair.motion's explainer for Ava AI, could not be viewed: Instagram returned only its caption. The genre was matched rather than the exact frames.
+- **`scripts/demo_video.py`:**
+  - A small PIL motion-graphics engine: eased spring animations, cached anti-aliased cards and shadows, kinetic type, ticking counters, zoom-through transitions.
+  - 10 scenes in 1:48, at 1920 × 1080 and 30 fps, with a synthesised music bed and whooshes.
+  - Every figure is real. The sources are listed in [demo/README.md](demo/README.md).
+- **Output:** `datasets/processed/demo/darubini_demo.mp4`, which is not committed.
+- **The APK for a phone:** `android/app/build/outputs/apk/debug/app-debug.apk`. It was built 2 Nov and includes voice.
+
+### 20. One palette everywhere; the 3-minute video in two cuts (3 Nov)
+
+- **User decisions:**
+  - Adopt the Darubini Proposal colours everywhere.
+  - Make the video 3:00, covering the problem before Darubini, what the Muse models do, how it was trained and the best results, and future scope across African diseases and TB culture simulation.
+  - Use the `latent-spaces/brag` skill for craft.
+  - Produce two cuts, one with sound effects only and one with a female narrator who is energetic, youthful and convincing.
+  - Narrator engine: Kokoro (open weights, Apache 2.0), installed in a separate `.venv-tts`. Meta's API has no text-to-speech (checked: only `/asr/transcribe`), and the only Windows female voice is Zira.
+- **Palette:** the proposal's blue `#2463EB` with slate neutrals, stain purple for info, green for success and red-600 for danger, which the proposal lacks.
+  - Applied to Android `Theme.kt` (token names kept), the launcher background and the web page (light and dark).
+  - The Android build and tests and the web tests pass.
+- **brag, read before use** (cloned to the scratchpad, nothing run):
+  - The rules adopted: the real product, readable holds, beat-grid cuts, dip transitions, a soft sound-effect layer, a poster as frame 0.
+  - The assets used: music "Happy Beats / Business Moves Vol. 1" by Sascha Ende (CC BY 4.0, credited on screen) and Kenney and unicae_games sound effects (CC0).
+  - The track (2:44) is stretched to 3:00 by repeating bars 38 to 45, cut on downbeats.
+- **Video** (`scripts/demo_video.py`, [demo/SCRIPT.md](demo/SCRIPT.md)): 12 scenes.
+  - New: a **training** scene. It shows the real split (102 / 24 / 24 patients; UDOM 431 / 180 photos), the verifier network (16×16 crop + 8 features → 776 → 64 → 1, 40 epochs with Adam), validation F1 0.29 → 0.81, threshold 0.75, five best practices, and the best results (0.81 verifier, 0.95 SAM WBC, 0.80 hybrid on test).
+  - New: a **roadmap** scene, labelled "not yet built". It shows TB, schistosomiasis, sleeping sickness and helminths, and a simulated TB culture plate growing over 42 days.
+  - Rendered in 4 parallel segments, remuxed without re-encoding, and muxed with two mixes.
+- **Narrator:** Kokoro `af_bella` at 1.08× speed, reading a punchier script. Every line was checked against its scene: no overlaps, and two lines run at most 0.35 s past a cut.
+- **Bug found and fixed while recapturing the app:** the app froze ("isn't responding") when the mic button was tapped on the emulator.
+  - Cause: `MediaRecorder.start()` and `stop()` ran on the UI thread and can block while the audio device opens.
+  - Fix: they now run on `Dispatchers.IO`, with a guard against double taps.
+  - Verified on the emulator: start, listening, stop, upload and "Nothing heard", with no freeze.
+- **New app screenshots in the proposal palette** (`docs/calibration/android_*.png`): start, listening, a captured field (4 parasites, 30 WBC) and its report.
+  - The report came from a real hybrid run with the Muse Spark agent: 1,067 /µL, audit 3 of 4 confirmed.
+  - The video's app scene uses them.
 
 ## Open issues
 
@@ -329,16 +453,17 @@ Full tables: [calibration/verifier.md](calibration/verifier.md).
 
 1. **Commit the trained verifier.** `models/` is ignored by git. The demo and a fresh clone need `models/parasite_verifier.npz` (0.2 MB). Either un-ignore that one file or publish it as a release asset.
 2. **Default segmenter.** `.env` still says `baseline`. `hybrid` is the best setting with the API and `verified` the best offline.
-3. **Commit this work.** Everything since 28 Oct is uncommitted.
+3. **Merge the branch.** Everything up to 2 Nov, including the final test results, is pushed as `feat/agent-tracking-android` and is waiting for a pull request into `main`.
+4. ~~Claims in HACKATHON.md~~ Resolved 2 Nov (step 18): voice and two-stage box confirmation are now built. Remaining caveats for the write-up: two-stage adds little over the verifier, Kiswahili voice is unconfirmed, and Muse Spark Open has not run against a real host (a partner key would close this).
 
 ## What's next
 
 | Priority | Task | Done when |
 | --- | --- | --- |
 | 1 | Install the Android app on a real phone and count a slide over Wi-Fi (photos from the datasets on screen are fine without a microscope) | A slide captured and reported from the phone |
-| 2 | Real panning video for tracking: any phone clip of a slide, or a pan synthesised from a full NIH field (`darubini track --synthetic`) | Tracking demo clip recorded; duplicates checked by hand |
+| 2 | Real panning video for tracking (a phone clip of a slide). The synthetic-pan demo clip is done (step 17) | Real clip tracked; duplicates checked against step 17 |
 | 3 | Improve UDOM parasite F1 (0.44 on the larger check half) | F1 on the `check` half clearly above 0.44 |
-| 4 | Final test-set run, once everything is frozen: UDOM test (30%), NIH test, NM-AIST | Ablation table in EVALUATION.md filled |
+| Done | ~~Final test-set run~~ (2 Nov, step 15) | Ablation table in EVALUATION.md filled |
 | Done | ~~Muse Spark agent~~, ~~SAM tracking~~, ~~phone capture app~~, ~~native Android app~~, ~~localised quality flags~~, ~~audit repeatability~~, ~~train/test split~~, ~~Figma restyle~~ | 30 Oct-2 Nov |
 
 ## Known risks

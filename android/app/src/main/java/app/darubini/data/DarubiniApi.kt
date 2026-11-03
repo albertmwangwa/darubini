@@ -33,6 +33,9 @@ class DarubiniApi(baseUrl: String, private val http: OkHttpClient = defaultClien
     suspend fun uploadClip(sessionId: String, clip: File): CaptureReply =
         Parse.capture(post("v1/sessions/$sessionId/clips", multipart(clip.name, clip.asRequestBody(MP4))))
 
+    suspend fun sendVoice(sessionId: String, audio: File): VoiceReply =
+        Parse.voice(post("v1/sessions/$sessionId/voice", multipart(audio.name, audio.asRequestBody(M4A))))
+
     suspend fun startReport(sessionId: String, language: String): ReportJob =
         Parse.job(post("v1/sessions/$sessionId/report?language=$language", ByteArray(0).toRequestBody()))
 
@@ -62,6 +65,7 @@ class DarubiniApi(baseUrl: String, private val http: OkHttpClient = defaultClien
     companion object {
         private val JPEG = "image/jpeg".toMediaType()
         private val MP4 = "video/mp4".toMediaType()
+        private val M4A = "audio/mp4".toMediaType()
 
         /** Clip analysis takes ~30 s and SAM can be slower, so reads wait generously. */
         val defaultClient: OkHttpClient = OkHttpClient.Builder()
