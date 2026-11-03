@@ -11,6 +11,7 @@ from darubini.tracking import (
     SamTracker,
     ShiftTracker,
     Track,
+    _centre_grey,
     box_token,
     count_clip,
     estimate_shift,
@@ -71,6 +72,15 @@ def test_estimate_shift_recovers_pan():
     dx, dy = estimate_shift(a, b, crop=256)
     assert dx == pytest.approx(-13, abs=0.5)
     assert dy == pytest.approx(0, abs=0.5)
+
+
+def test_centre_grey_returns_float_central_crop():
+    frame = np.zeros((6, 8, 3), dtype=np.uint8)
+    frame[..., 1] = 9
+    centre = _centre_grey(frame, crop=4)
+    assert centre.shape == (4, 4)
+    assert centre.dtype == np.float64
+    assert np.all(centre == 3.0)
 
 
 def test_shift_tracker_counts_each_object_once():

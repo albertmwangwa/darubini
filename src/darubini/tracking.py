@@ -223,7 +223,8 @@ class SamTracker:
 
 
 def _centre_grey(frame: Frame, crop: int) -> NDArray[np.float64]:
-    g = np.asarray(frame).mean(axis=2)
+    g = np.empty(frame.shape[:2], dtype=np.float64)
+    np.mean(frame, axis=2, dtype=np.float64, out=g)
     h, w = g.shape
     y0, x0 = max(0, (h - crop) // 2), max(0, (w - crop) // 2)
     return g[y0 : y0 + crop, x0 : x0 + crop]
