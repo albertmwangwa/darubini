@@ -78,6 +78,14 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   input[type=file] { display: none; }
+  /* Live microscope camera */
+  .cam video { width: 100%; border-radius: 10px; background: #000; display: block; aspect-ratio: 4 / 3; object-fit: contain; }
+  .cam select { width: 100%; min-height: 44px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font: inherit; padding: 0 10px; margin-bottom: 10px; }
+  .cam .wrap { position: relative; }
+  .cam .flash { position: absolute; inset: 0; border-radius: 10px; background: #fff; opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .cam .flash.on { opacity: .7; transition: none; }
+  .cam .rec { position: absolute; top: 10px; left: 10px; background: var(--bad); color: #fff; border-radius: 999px; padding: 2px 10px; font-size: 13px; font-weight: 600; }
+  .btn.rec-on { background: var(--bad); border-color: var(--bad); color: #fff; }
   footer { text-align: center; padding: 8px 16px 28px; }
 </style>
 </head>
@@ -115,6 +123,20 @@
     <div class="row">
       <label class="btn primary" for="photo"><span data-t="photo"></span></label>
       <label class="btn" for="clip"><span data-t="clip"></span></label>
+    </div>
+    <button class="btn" id="camOpen" data-t="camOpen"></button>
+    <div id="camCard" class="card cam hidden">
+      <select id="camSelect" aria-label="Camera"></select>
+      <div class="wrap">
+        <video id="camView" autoplay playsinline muted></video>
+        <div class="flash" id="camFlash"></div>
+        <div class="rec hidden" id="camRecBadge">REC</div>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="camShot" data-t="camShot"></button>
+        <button class="btn" id="camRec" data-t="camRec"></button>
+      </div>
+      <p class="muted" id="camHint" data-t="camHint"></p>
     </div>
     <button class="btn" id="talk" data-t="talk"></button>
     <p class="muted" id="heard"></p>
@@ -174,7 +196,11 @@ const T = {
     disclaimer: "Decision support only. A qualified microscopist must confirm every result.",
     talk: "Speak a command", stopTalk: "Listening… tap to send",
     noteSaved: n => `Note saved: ${n}`, notUnderstood: h => h ? `Heard "${h}": not a command. Say "next field", "retake", "finish" or "note …".` : "Nothing heard. Try again.",
-    voiceNotes: "Spoken notes: "
+    voiceNotes: "Spoken notes: ",
+    camOpen: "Use a microscope camera", camClose: "Close the camera", camShot: "Capture field", camRec: "Record pan", camStop: "Stop and count",
+    camHint: "Keys: Space captures a field, R records a pan, V speaks a command, F finishes the slide.",
+    camBlocked: "The browser blocked the camera. Open this page on localhost or over HTTPS, and allow camera access.",
+    camNone: "No camera found. Plug in the eyepiece or microscope camera and try again."
   },
   sw: {
     welcome: "Hesabu filamu nene ya damu", begin: "Anza slaidi mpya",
@@ -195,7 +221,11 @@ const T = {
     disclaimer: "Msaada wa kufanya uamuzi tu. Mtaalamu wa hadubini aliyehitimu lazima athibitishe kila matokeo.",
     talk: "Toa amri kwa sauti", stopTalk: "Inasikiliza… gusa kutuma",
     noteSaved: n => `Kumbukumbu imehifadhiwa: ${n}`, notUnderstood: h => h ? `Imesikika "${h}": si amri. Sema "sehemu inayofuata", "piga tena", "maliza" au "kumbuka …".` : "Hakuna kilichosikika. Jaribu tena.",
-    voiceNotes: "Kumbukumbu za sauti: "
+    voiceNotes: "Kumbukumbu za sauti: ",
+    camOpen: "Tumia kamera ya hadubini", camClose: "Funga kamera", camShot: "Piga picha ya sehemu", camRec: "Rekodi video", camStop: "Simamisha na uhesabu",
+    camHint: "Vitufe: Space hupiga picha, R hurekodi video, V hutoa amri kwa sauti, F humaliza slaidi.",
+    camBlocked: "Kivinjari kimezuia kamera. Fungua ukurasa huu kwenye localhost au kupitia HTTPS, na uruhusu kamera.",
+    camNone: "Hakuna kamera iliyopatikana. Unganisha kamera ya hadubini kisha ujaribu tena."
   }
 };
 const UPLOAD_SIDE = 2048;
@@ -208,12 +238,16 @@ function applyLang() {
   document.querySelectorAll("[data-t]").forEach(el => { el.textContent = t(el.dataset.t); });
   document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
   if (lastNext) showNext(lastNext);
+  if (typeof camRefreshLabels === "function") camRefreshLabels();
   try { localStorage.setItem("darubini-lang", lang); } catch (e) { /* storage may be blocked */ }
 }
 document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => { lang = b.dataset.lang; applyLang(); }));
 try { const saved = localStorage.getItem("darubini-lang"); if (saved === "sw" || saved === "en") lang = saved; } catch (e) { /* ignore */ }
 
 function show(section) {
+  if (section !== "capture" && typeof camStopStream === "function" && camStream) {
+    camStopStream(); $("camCard").classList.add("hidden"); camRefreshLabels();  // release the camera
+  }
   ["start", "capture", "report"].forEach(s => $(s).classList.toggle("hidden", s !== section));
   window.scrollTo(0, 0);
 }
@@ -250,7 +284,7 @@ function showNext(next, blocking) {
 
 function setBusy(on) {
   $("busy").classList.toggle("hidden", !on);
-  ["photo", "clip"].forEach(id => { $(id).disabled = on; });
+  ["photo", "clip", "camShot", "camRec"].forEach(id => { $(id).disabled = on; });
   $("finish").disabled = on;
 }
 
@@ -297,9 +331,8 @@ $("begin").addEventListener("click", async () => {
   } catch (e) { alert(t("error") + e.message); }
 });
 
-$("photo").addEventListener("change", async ev => {
-  const file = ev.target.files[0]; ev.target.value = "";
-  if (!file) return;
+// One path for every field and clip: a file, the phone's camera, or a microscope camera.
+async function sendPhoto(file) {
   setBusy(true);
   try {
     const { blob, bitmap } = await downscale(file);
@@ -314,14 +347,12 @@ $("photo").addEventListener("change", async ev => {
     $("banner").classList.remove("hidden");
   } catch (e) { alert(t("error") + e.message); }
   setBusy(false);
-});
+}
 
-$("clip").addEventListener("change", async ev => {
-  const file = ev.target.files[0]; ev.target.value = "";
-  if (!file) return;
+async function sendClip(file, name) {
   setBusy(true);
   try {
-    const form = new FormData(); form.append("file", file, file.name || "clip.mp4");
+    const form = new FormData(); form.append("file", file, name || file.name || "clip.mp4");
     const r = await api(`/v1/sessions/${sid}/clips`, { method: "POST", body: form });
     fieldsKept++;
     $("clipCard").textContent = t("clipLine")(r.clip);
@@ -331,6 +362,119 @@ $("clip").addEventListener("change", async ev => {
     $("banner").classList.remove("hidden");
   } catch (e) { alert(t("error") + e.message); }
   setBusy(false);
+}
+
+$("photo").addEventListener("change", ev => {
+  const file = ev.target.files[0]; ev.target.value = "";
+  if (file) sendPhoto(file);
+});
+
+$("clip").addEventListener("change", ev => {
+  const file = ev.target.files[0]; ev.target.value = "";
+  if (file) sendClip(file);
+});
+
+// ---- Live microscope camera. A USB eyepiece or trinocular-port camera is a webcam to the browser.
+const CLIP_MAX_MS = 8000;
+let camStream = null, camRecorder = null, camTimer = null;
+
+function camRefreshLabels() {
+  $("camOpen").textContent = t(camStream ? "camClose" : "camOpen");
+  $("camRec").textContent = t(camRecorder ? "camStop" : "camRec");
+  $("camRec").classList.toggle("rec-on", !!camRecorder);
+  $("camRecBadge").classList.toggle("hidden", !camRecorder);
+}
+
+async function camStart(deviceId) {
+  camStopStream();
+  const video = deviceId
+    ? { deviceId: { exact: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+    : { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: "environment" };
+  camStream = await navigator.mediaDevices.getUserMedia({ video, audio: false });
+  $("camView").srcObject = camStream;
+  // Camera names are only visible after permission is granted, so list them now.
+  const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === "videoinput");
+  const current = camStream.getVideoTracks()[0].getSettings().deviceId;
+  $("camSelect").replaceChildren(...cams.map((d, i) => {
+    const o = document.createElement("option");
+    o.value = d.deviceId; o.textContent = d.label || `Camera ${i + 1}`; o.selected = d.deviceId === current;
+    return o;
+  }));
+}
+
+function camStopStream() {
+  if (camRecorder) camRecorder.stop();
+  if (camStream) camStream.getTracks().forEach(tr => tr.stop());
+  camStream = null;
+  $("camView").srcObject = null;
+}
+
+$("camOpen").addEventListener("click", async () => {
+  if (camStream) { camStopStream(); $("camCard").classList.add("hidden"); camRefreshLabels(); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { alert(t("camBlocked")); return; }
+  try {
+    await camStart();
+    $("camCard").classList.remove("hidden");
+  } catch (e) {
+    alert(e && e.name === "NotFoundError" ? t("camNone") : t("camBlocked"));
+  }
+  camRefreshLabels();
+});
+
+$("camSelect").addEventListener("change", async ev => {
+  try { await camStart(ev.target.value); } catch (e) { alert(t("error") + e.message); }
+});
+
+function camCapture() {
+  const v = $("camView");
+  // A camera that has not delivered a real picture yet reports a tiny size; wait for it.
+  if (!camStream || v.videoWidth < 64 || $("camShot").disabled) return;
+  const c = document.createElement("canvas");
+  c.width = v.videoWidth; c.height = v.videoHeight;
+  c.getContext("2d").drawImage(v, 0, 0);
+  $("camFlash").classList.add("on");
+  requestAnimationFrame(() => requestAnimationFrame(() => $("camFlash").classList.remove("on")));
+  c.toBlob(blob => { if (blob) sendPhoto(blob); }, "image/jpeg", 0.92);
+}
+
+function camRecordToggle() {
+  if (!camStream || $("camRec").disabled) return;
+  if (camRecorder) { camRecorder.stop(); return; }
+  const types = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm", "video/mp4"];
+  const mimeType = types.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || "";
+  const chunks = [];
+  let rec;
+  try {
+    rec = new MediaRecorder(camStream, mimeType ? { mimeType } : {});
+    rec.ondataavailable = ev => { if (ev.data.size) chunks.push(ev.data); };
+    rec.onstop = () => {
+      clearTimeout(camTimer);
+      camRecorder = null; camRefreshLabels();
+      const type = chunks[0]?.type || mimeType || "video/webm";
+      if (chunks.length) sendClip(new Blob(chunks, { type }), type.includes("mp4") ? "pan.mp4" : "pan.webm");
+    };
+    rec.start(250);
+  } catch (e) {  // the browser cannot record this camera; say so instead of looking stuck
+    alert(t("error") + e.message);
+    return;
+  }
+  camRecorder = rec;
+  camTimer = setTimeout(() => camRecorder && camRecorder.stop(), CLIP_MAX_MS);
+  camRefreshLabels();
+}
+
+$("camShot").addEventListener("click", camCapture);
+$("camRec").addEventListener("click", camRecordToggle);
+
+// Hands stay on the microscope: Space captures, R records, V speaks, F finishes.
+document.addEventListener("keydown", ev => {
+  if ($("capture").classList.contains("hidden") || ev.repeat || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  if (["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(document.activeElement?.tagName)) return;
+  const key = ev.key.toLowerCase();
+  if (key === " " && camStream) { ev.preventDefault(); camCapture(); }
+  else if (key === "r" && camStream) camRecordToggle();
+  else if (key === "v") $("talk").click();
+  else if (key === "f") $("finish").click();
 });
 
 function stepLine(s) {

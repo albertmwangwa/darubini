@@ -5,12 +5,12 @@ build-backend = "hatchling.build"
 [project]
 name = "darubini"
 version = "0.1.0"
-description = "Malaria microscopy copilot: segment, count and report parasites in thick blood smears with Meta SAM 3 and Muse Spark."
+description = "Malaria microscopy copilot: count parasites in thick blood films from a phone or microscope camera, with Meta SAM 3.1, Muse Spark and Muse Voice, and report in Kiswahili or English."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Albert William Mwangwa" }]
-keywords = ["malaria", "microscopy", "segmentation", "sam", "computer-vision", "global-health", "tanzania"]
+keywords = ["malaria", "microscopy", "parasite-counting", "segmentation", "sam", "muse-spark", "agents", "computer-vision", "global-health", "tanzania", "kiswahili"]
 classifiers = [
   "Programming Language :: Python :: 3",
   "License :: OSI Approved :: MIT License",

@@ -428,6 +428,29 @@ The user asked to complete the implementation plan. Three Meta-tooling items wer
   - The report came from a real hybrid run with the Muse Spark agent: 1,067 /µL, audit 3 of 4 confirmed.
   - The video's app scene uses them.
 
+### 21. Web app with a live microscope camera; README and description refresh (3 Nov)
+
+- **Question from the user:** must it be a phone? No. The web app at `/` already ran the same flow; what was missing was a live camera on a computer.
+  - USB eyepiece and trinocular-port cameras are webcams to the browser.
+  - The page's file input only opens a file chooser on a laptop.
+- **Live camera mode** (`static/index.html`):
+  - camera picker, live preview, **Capture field** (a JPEG of the full-resolution frame), **Record pan** (WebM VP9/VP8, or MP4; at most 8 s, a REC badge)
+  - keys: Space captures, R records, V voice, F finish
+  - the camera is released when leaving the capture screen
+  - clear messages when the camera is blocked (it needs localhost or HTTPS) or missing
+  - photo, clip and camera now share one upload path
+- **Verified in headless Chrome** with a recorded microscope pan as the fake camera (1280×720):
+  - Space captured a field, and the server counted it.
+  - R recorded a VP9 WebM; the server decoded 60 frames and tracked them (70 parasites once, against 141 counted frame by frame).
+- **Bug fixed:** when `MediaRecorder.start()` failed, the page kept the broken recorder and looked stuck. It now reports the error and resets. Capture also waits until the camera delivers a real picture.
+- **Tests:** a real WebM clip decodes and counts through `/clips`, and the page offers the camera. 220 tests pass.
+- **README:** rebuilt around three images drawn by `scripts/readme_art.py` from real data:
+  - a banner with a real field and its detections
+  - an architecture diagram, which renders everywhere (the Mermaid source moved into a collapsible section)
+  - a results card
+  - It adds an "At a glance" table, a "How it was trained" table, "Three ways to use it" with app and web screenshots, the demo video, and an Africa-wide roadmap.
+- **Project description:** `pyproject.toml` updated. The GitHub "About" description has to be set by the user, because the GitHub CLI is not installed here.
+
 ## Open issues
 
 1. **Parasite over-counting on some slides.** It is now flagged by the audit (step 7), not fixed. Remaining options:

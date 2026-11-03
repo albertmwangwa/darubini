@@ -90,6 +90,40 @@ def test_clip_upload_counts_with_tracking():
     assert clip["naive_parasites"] >= clip["parasites"]
 
 
+def test_webm_clip_from_a_browser_camera_is_counted():
+    """The microscope camera records WebM (VP8/VP9) in the browser; the server must decode it."""
+    av = pytest.importorskip("av")
+
+    frames = [make_field(seed=0, size=256)[:, i * 4 : i * 4 + 160] for i in range(12)]
+    buf = io.BytesIO()
+    with av.open(buf, "w", format="webm") as out:
+        s = out.add_stream("libvpx", rate=15)
+        s.width, s.height, s.pix_fmt = 160, 256, "yuv420p"
+        for f in frames:
+            for p in s.encode(av.VideoFrame.from_ndarray(np.ascontiguousarray(f), format="rgb24")):
+                out.mux(p)
+        for p in s.encode(None):
+            out.mux(p)
+    sid = client.post("/v1/sessions").json()["session_id"]
+    r = client.post(
+        f"/v1/sessions/{sid}/clips", files={"file": ("pan.webm", buf.getvalue(), "video/webm")}
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["clip"]["frames"] == 12
+
+
+def test_page_offers_the_microscope_camera():
+    page = client.get("/").text
+    for marker in (
+        'id="camOpen"',
+        'id="camView"',
+        "getUserMedia",
+        "MediaRecorder",
+        'id="camSelect"',
+    ):
+        assert marker in page
+
+
 def test_session_store_expiry_and_cap():
     store = SessionStore(max_sessions=2, ttl_s=60)
     a, b = store.create(), store.create()
