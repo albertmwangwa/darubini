@@ -24,7 +24,7 @@ The design has five screens:
 **Visual design.** Since 2 Nov the app uses the design language of the *Credit Design* Figma system, adopted as Darubini's own:
 
 - Plus Jakarta Sans;
-- deep green `#215732` with lime accents;
+- the Darubini Proposal colours (since 3 Nov): blue `#2463EB` on slate, green for success and stain purple for info;
 - white cards with hairline borders;
 - pill buttons;
 - status shown as colour plus a word;

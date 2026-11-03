@@ -19,53 +19,55 @@ import androidx.compose.ui.unit.sp
 import app.darubini.R
 
 /**
- * Design tokens from the "Credit Design" Figma system (01 · Foundations), adopted as
- * Darubini's own. Use a token, never a raw value.
+ * Design tokens. Colours follow the Darubini Proposal palette (docs/proposal/index.html):
+ * blue primary, slate neutrals, stain purple for info, green for success. Type, radii and
+ * components follow the "Credit Design" Figma system. Token names are kept from that
+ * system ("Lime" is the success/accent role). Use a token, never a raw value.
  */
 object Tokens {
     // Brand
-    val Primary = Color(0xFF215732)
-    val PrimaryStrong = Color(0xFF16391F)
-    val PrimarySoft = Color(0xFFE8F3E3)
-    val PrimarySofter = Color(0xFFEEF7EA)
-    val PrimaryWash = Color(0xFFF6FAF4)
-    val Lime = Color(0xFF43B02A)
-    val LimeSoft = Color(0xFFDDF0D5)
-    val LimeText = Color(0xFF2A6E1B)
-    val LimeBright = Color(0xFF9BE36F)
+    val Primary = Color(0xFF2463EB)
+    val PrimaryStrong = Color(0xFF1842B4)
+    val PrimarySoft = Color(0xFFECF1FE)
+    val PrimarySofter = Color(0xFFF2F6FE)
+    val PrimaryWash = Color(0xFFF7F9FE)
+    val Lime = Color(0xFF25935F)
+    val LimeSoft = Color(0xFFE3F3EA)
+    val LimeText = Color(0xFF1D7A4E)
+    val LimeBright = Color(0xFF90C7FE)
 
     // Surface
-    val Background = Color(0xFFECEEED)
+    val Background = Color(0xFFE9ECF1)
     val Card = Color(0xFFFFFFFF)
-    val Muted = Color(0xFFF4F6F5)
-    val Muted2 = Color(0xFFEEF1EF)
-    val Subtle = Color(0xFFFAFBFA)
-    val Ink = Color(0xFF1C2420)
+    val Muted = Color(0xFFF3F4F7)
+    val Muted2 = Color(0xFFEDEFF3)
+    val Subtle = Color(0xFFFAFBFC)
+    val Ink = Color(0xFF0F1729)
 
     // Text
-    val Foreground = Color(0xFF151A17)
-    val TextMuted = Color(0xFF6B736E)
-    val TextFaint = Color(0xFF6E7671)
+    val Foreground = Color(0xFF0F1729)
+    val TextMuted = Color(0xFF5D6779)
+    val TextFaint = Color(0xFF6B7486)
     val OnPrimary = Color(0xFFFFFFFF)
-    val ForegroundSoft = Color(0xFF2F3832)
+    val ForegroundSoft = Color(0xFF273041)
 
     // Border
-    val Border = Color(0xFFE5E8E6)
-    val BorderInput = Color(0xFFDDE2DF)
-    val BorderStrong = Color(0xFFCFD8D3)
-    val Ring = Color(0xFF3A9A24)
+    val Border = Color(0xFFDEE1E7)
+    val BorderInput = Color(0xFFD5D9E0)
+    val BorderStrong = Color(0xFFC8CED8)
+    val Ring = Color(0xFF2463EB)
 
     // Status
-    val Warning = Color(0xFFF0A33A)
-    val WarningStrong = Color(0xFF9A5B07)
-    val WarningSoft = Color(0xFFFDF2E1)
-    val Danger = Color(0xFFC8412F)
-    val DangerStrong = Color(0xFFA13322)
-    val DangerSoft = Color(0xFFFBE9E6)
-    val Info = Color(0xFF5B5BD6)
-    val InfoStrong = Color(0xFF3E3EB0)
-    val InfoSoft = Color(0xFFECECFB)
-    val MarkFaint = Color(0xFF9AA29D)
+    val Warning = Color(0xFFE08A1E)
+    val WarningStrong = Color(0xFFA3580A)
+    val WarningSoft = Color(0xFFFDF3E2)
+    val Danger = Color(0xFFDC2626)
+    val DangerStrong = Color(0xFFB91C1C)
+    val DangerSoft = Color(0xFFFEECEC)
+    val Info = Color(0xFF683B9B)
+    val InfoStrong = Color(0xFF522E7B)
+    val InfoSoft = Color(0xFFF1EAF8)
+    val MarkFaint = Color(0xFFA0A7B4)
 }
 
 /** Corner radii (radius/xs … radius/pill). */
@@ -81,8 +83,8 @@ object Radius {
 
 /** Detection overlay colours, the same as the web app's --parasite and --wbc. */
 object Marks {
-    val Parasite = Color(0xFFD1006F)
-    val Wbc = Color(0xFF1F6FD1)
+    val Parasite = Color(0xFFDB2777)
+    val Wbc = Color(0xFF2463EB)
 }
 
 private fun jakarta(weight: Int) = Font(

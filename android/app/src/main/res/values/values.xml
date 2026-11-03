@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Darubini</string>
-    <color name="launcher_background">#006A6A</color>
+    <color name="launcher_background">#2463EB</color>
 </resources>

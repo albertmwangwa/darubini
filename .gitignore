@@ -38,3 +38,4 @@ runs/
 .audit-requirements.txt
 datasets/PROFILE.md
 .cache/
+.venv-tts/

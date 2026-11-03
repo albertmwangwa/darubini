@@ -400,6 +400,34 @@ The user asked to complete the implementation plan. Three Meta-tooling items wer
 - **Output:** `datasets/processed/demo/darubini_demo.mp4`, which is not committed.
 - **The APK for a phone:** `android/app/build/outputs/apk/debug/app-debug.apk`. It was built 2 Nov and includes voice.
 
+### 20. One palette everywhere; the 3-minute video in two cuts (3 Nov)
+
+- **User decisions:**
+  - Adopt the Darubini Proposal colours everywhere.
+  - Make the video 3:00, covering the problem before Darubini, what the Muse models do, how it was trained and the best results, and future scope across African diseases and TB culture simulation.
+  - Use the `latent-spaces/brag` skill for craft.
+  - Produce two cuts, one with sound effects only and one with a female narrator who is energetic, youthful and convincing.
+  - Narrator engine: Kokoro (open weights, Apache 2.0), installed in a separate `.venv-tts`. Meta's API has no text-to-speech (checked: only `/asr/transcribe`), and the only Windows female voice is Zira.
+- **Palette:** the proposal's blue `#2463EB` with slate neutrals, stain purple for info, green for success and red-600 for danger, which the proposal lacks.
+  - Applied to Android `Theme.kt` (token names kept), the launcher background and the web page (light and dark).
+  - The Android build and tests and the web tests pass.
+- **brag, read before use** (cloned to the scratchpad, nothing run):
+  - The rules adopted: the real product, readable holds, beat-grid cuts, dip transitions, a soft sound-effect layer, a poster as frame 0.
+  - The assets used: music "Happy Beats / Business Moves Vol. 1" by Sascha Ende (CC BY 4.0, credited on screen) and Kenney and unicae_games sound effects (CC0).
+  - The track (2:44) is stretched to 3:00 by repeating bars 38 to 45, cut on downbeats.
+- **Video** (`scripts/demo_video.py`, [demo/SCRIPT.md](demo/SCRIPT.md)): 12 scenes.
+  - New: a **training** scene. It shows the real split (102 / 24 / 24 patients; UDOM 431 / 180 photos), the verifier network (16×16 crop + 8 features → 776 → 64 → 1, 40 epochs with Adam), validation F1 0.29 → 0.81, threshold 0.75, five best practices, and the best results (0.81 verifier, 0.95 SAM WBC, 0.80 hybrid on test).
+  - New: a **roadmap** scene, labelled "not yet built". It shows TB, schistosomiasis, sleeping sickness and helminths, and a simulated TB culture plate growing over 42 days.
+  - Rendered in 4 parallel segments, remuxed without re-encoding, and muxed with two mixes.
+- **Narrator:** Kokoro `af_bella` at 1.08× speed, reading a punchier script. Every line was checked against its scene: no overlaps, and two lines run at most 0.35 s past a cut.
+- **Bug found and fixed while recapturing the app:** the app froze ("isn't responding") when the mic button was tapped on the emulator.
+  - Cause: `MediaRecorder.start()` and `stop()` ran on the UI thread and can block while the audio device opens.
+  - Fix: they now run on `Dispatchers.IO`, with a guard against double taps.
+  - Verified on the emulator: start, listening, stop, upload and "Nothing heard", with no freeze.
+- **New app screenshots in the proposal palette** (`docs/calibration/android_*.png`): start, listening, a captured field (4 parasites, 30 WBC) and its report.
+  - The report came from a real hybrid run with the Muse Spark agent: 1,067 /µL, audit 3 of 4 confirmed.
+  - The video's app scene uses them.
+
 ## Open issues
 
 1. **Parasite over-counting on some slides.** It is now flagged by the audit (step 7), not fixed. Remaining options:

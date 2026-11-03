@@ -134,31 +134,44 @@ class DarubiniViewModel(app: Application) : AndroidViewModel(app) {
 
     /** First tap starts recording; the second sends it to Muse Voice Transcribe and acts on it. */
     fun toggleListening() {
+        // MediaRecorder can block while the audio device opens or closes, so it never runs on the UI thread.
+        if (recorderBusy) return
+        recorderBusy = true
         if (!_state.value.listening) {
-            try {
-                recorder.start()
-                _state.update { it.copy(listening = true, message = null) }
-            } catch (e: Exception) {
-                say(s.error + (e.message ?: e.javaClass.simpleName))
+            viewModelScope.launch {
+                try {
+                    withContext(Dispatchers.IO) { recorder.start() }
+                    _state.update { it.copy(listening = true, message = null) }
+                } catch (e: Exception) {
+                    say(s.error + (e.message ?: e.javaClass.simpleName))
+                } finally {
+                    recorderBusy = false
+                }
             }
             return
         }
-        val audio = recorder.stop()
         _state.update { it.copy(listening = false) }
-        if (audio == null) {
-            say(s.notUnderstood(""))
-            return
-        }
-        work {
-            val sid = _state.value.sessionId ?: return@work
-            val reply = api.sendVoice(sid, audio)
-            _state.update { it.copy(voiceNotes = reply.voiceNotes) }
-            when (reply.action) {
-                "next", "retake" -> _state.update { it.copy(cameraRequested = true) }
-                "finish" -> finishAfterWork = true
-                "note" -> say(s.noteSaved(reply.note.orEmpty()))
-                else -> say(s.notUnderstood(reply.transcript))
+        viewModelScope.launch {
+            val audio = try {
+                withContext(Dispatchers.IO) { recorder.stop() }
+            } finally {
+                recorderBusy = false
             }
+            if (audio == null) say(s.notUnderstood("")) else sendVoice(audio)
+        }
+    }
+
+    private var recorderBusy = false
+
+    private fun sendVoice(audio: File) = work {
+        val sid = _state.value.sessionId ?: return@work
+        val reply = api.sendVoice(sid, audio)
+        _state.update { it.copy(voiceNotes = reply.voiceNotes) }
+        when (reply.action) {
+            "next", "retake" -> _state.update { it.copy(cameraRequested = true) }
+            "finish" -> finishAfterWork = true
+            "note" -> say(s.noteSaved(reply.note.orEmpty()))
+            else -> say(s.notUnderstood(reply.transcript))
         }
     }
 
