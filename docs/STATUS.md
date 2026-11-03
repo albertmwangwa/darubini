@@ -474,6 +474,22 @@ The user asked to complete the implementation plan. Three Meta-tooling items wer
   - A wrong "about 6×" white-cell over-count was corrected to about 2.5×: 20.3 labelled per field, +31.
 - `scripts/narrate.py` now accepts a speed per line; the two results lines use 1.12×.
 
+### 23. Runnable for judges: verifier shipped, best defaults, merged into `main` (3 Nov)
+
+- **`models/parasite_verifier.npz`** (v3, threshold 0.75, 207 KB) is now tracked: `.gitignore` un-ignores exactly that file.
+- **Defaults:**
+  - The code default is `verified`, the best detector that needs no API key.
+  - `.env.example` sets `hybrid`, the best detector with a key.
+- **Test change:** the `/v1/analyse` test now pins the baseline detector. Its synthetic painted dots are correctly rejected by the verifier.
+- **Tests:** 220 pass both with `verified` (as CI, with no `.env`, will see it) and locally with `baseline`.
+- **Fresh-clone check:**
+  - The branch, cloned from GitHub with no `.env` and no key, ran `darubini analyse` on a real NIH field in `verified` mode.
+  - It counted 32 parasites, against the expert's 35.
+- **Merged:**
+  - `origin/main` was merged into the branch.
+  - The README conflict kept the user's removal of the "live demo on a real microscope" roadmap item.
+  - `main` was fast-forwarded to the branch at `06d63ed`, with no force push.
+
 ## Open issues
 
 1. **Parasite over-counting on some slides.** It is now flagged by the audit (step 7), not fixed. Remaining options:
@@ -497,10 +513,10 @@ The user asked to complete the implementation plan. Three Meta-tooling items wer
 
 ## Decisions needed
 
-1. **Commit the trained verifier.** `models/` is ignored by git. The demo and a fresh clone need `models/parasite_verifier.npz` (0.2 MB). Either un-ignore that one file or publish it as a release asset.
-2. **Default segmenter.** `.env` still says `baseline`. `hybrid` is the best setting with the API and `verified` the best offline.
-3. **Merge the branch.** Everything up to 2 Nov, including the final test results, is pushed as `feat/agent-tracking-android` and is waiting for a pull request into `main`.
-4. ~~Claims in HACKATHON.md~~ Resolved 2 Nov (step 18): voice and two-stage box confirmation are now built. Remaining caveats for the write-up: two-stage adds little over the verifier, Kiswahili voice is unconfirmed, and Muse Spark Open has not run against a real host (a partner key would close this).
+1. ~~Commit the trained verifier~~: done 3 Nov (step 23).
+2. ~~Default segmenter~~: done 3 Nov. The code default is `verified`, and `.env.example` sets `hybrid`. The user's own `.env` still says `baseline`; change it to `hybrid` to use the API.
+3. ~~Merge the branch~~: done 3 Nov. `main` is at `06d63ed`.
+4. ~~Claims in HACKATHON.md~~: resolved 2 Nov (step 18).
 
 ## What's next
 
