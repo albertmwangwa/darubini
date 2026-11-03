@@ -275,7 +275,6 @@ The day-by-day hackathon plan is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEME
 - [x] Phone capture web app with detection overlay, running count and live agent report
 - [x] Native Android app (Compose), styled in the Credit Design Figma language
 - [x] Voice commands (Muse Voice Transcribe), two-stage SAM 3.1 box confirmation, Muse Spark Open narratives
-- [ ] Live demo on a real microscope in Dar es Salaam; 3-minute video
 
 ## Responsible AI
 
