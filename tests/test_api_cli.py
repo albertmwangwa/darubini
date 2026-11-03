@@ -23,7 +23,14 @@ def test_health():
     assert r.status_code == 200 and r.json()["status"] == "ok"
 
 
-def test_analyse_two_fields_kiswahili():
+def test_analyse_two_fields_kiswahili(monkeypatch):
+    # Synthetic fields have painted dots the stain baseline finds; the verifier, trained on real
+    # smears, rightly rejects them. This tests the endpoint, so pin the baseline detector.
+    from darubini.api import app as app_module
+    from darubini.pipeline import Pipeline
+    from darubini.segmentation.baseline import BaselineSegmenter
+
+    monkeypatch.setattr(app_module, "_pipeline", lambda: Pipeline(BaselineSegmenter()))
     files = [("files", (f"f{i}.png", _png(i), "image/png")) for i in range(2)]
     r = client.post("/v1/analyse?language=sw", files=files)
     assert r.status_code == 200, r.text

@@ -26,6 +26,8 @@ datasets/processed/*
 # Models and run outputs
 models/*
 !models/.gitkeep
+# The trained parasite verifier (v3, 0.2 MB) ships, so a fresh clone can run verified and hybrid.
+!models/parasite_verifier.npz
 runs/
 
 # Notebooks

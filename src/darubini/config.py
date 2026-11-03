@@ -32,7 +32,8 @@ class Settings(BaseSettings):
     meta_cache_dir: Path | None = Field(default=Path(".cache/meta"), alias="DARUBINI_CACHE_DIR")
 
     # Pipeline
-    segmenter: str = Field(default="baseline", alias="DARUBINI_SEGMENTER")
+    #: "verified" is the best detector that needs no API key; set "hybrid" with a key.
+    segmenter: str = Field(default="verified", alias="DARUBINI_SEGMENTER")
     report_language: str = Field(default="en", alias="DARUBINI_REPORT_LANGUAGE")
     datasets_dir: Path = Field(default=Path("datasets"), alias="DARUBINI_DATASETS_DIR")
     verifier_path: Path = Field(
