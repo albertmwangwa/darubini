@@ -1247,8 +1247,17 @@ def s_results(c: Image.Image, t: float) -> None:
                 text(c, after, 1740, y + 24, 46, 800, PRIMARY, a * g, "tr")
         if tt > 3.2:
             kk = prog(tt, 3.2, 0.6)
-            pill(c, "Parasites themselves come from our own verifier network. SAM 3.1 alone scored parasite F1 0.64.", 140,
-                 830, MUTED, SURFACE, 22, clamp(kk * 2), out_back(kk))
+            pill(
+                c,
+                "Parasites themselves come from our own verifier network. SAM 3.1 alone scored parasite F1 0.64.",
+                140,
+                830,
+                MUTED,
+                SURFACE,
+                22,
+                clamp(kk * 2),
+                out_back(kk),
+            )
 
 
 def s_honest(c: Image.Image, t: float) -> None:
@@ -1482,7 +1491,9 @@ def s_outro(c: Image.Image, t: float) -> None:
         "tc",
     )
     if t > 7.7:
-        c.alpha_composite(Image.new("RGBA", (W, H), (0, 0, 0, int(255 * out_cubic(prog(t, 7.7, 1.2))))))
+        c.alpha_composite(
+            Image.new("RGBA", (W, H), (0, 0, 0, int(255 * out_cubic(prog(t, 7.7, 1.2)))))
+        )
 
 
 # Durations sit on the music's 2-second bar grid; the first downbeat is at 3.02 s.
