@@ -85,12 +85,14 @@
     {
       "scene": "results",
       "at": 0.8,
-      "text": "The results, on patients it never saw. Parasite F1: zero point eight. Nineteen of twenty-four slides within twice the expert's density. And the audit caught every single over-count."
+      "text": "On patients it never saw: parasite F1, zero point eight. Nineteen of twenty-four slides within twice the expert. Every over-count, caught.",
+      "speed": 1.12
     },
     {
       "scene": "results",
-      "at": 13.4,
-      "text": "Every part adds accuracy. Together, they count best."
+      "at": 10.9,
+      "text": "Where does Meta's AI move the number? SAM 3.1's white cell count: thirteen slides within twice the expert became nineteen.",
+      "speed": 1.12
     },
     {
       "scene": "honest",

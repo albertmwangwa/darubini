@@ -451,6 +451,29 @@ The user asked to complete the implementation plan. Three Meta-tooling items wer
   - It adds an "At a glance" table, a "How it was trained" table, "Three ways to use it" with app and web screenshots, the demo video, and an Africa-wide roadmap.
 - **Project description:** `pyproject.toml` updated. The GitHub "About" description has to be set by the user, because the GitHub CLI is not installed here.
 
+### 22. Saying plainly where Meta's AI moves the number (3 Nov)
+
+- **Why:** the mock judge report (`Judge.md`, not committed) found that a judge would ask where Meta's AI moves the main number. Parasites come from our verifier, and that was not said plainly.
+- **The answer, from the frozen NIH test**, with the same parasite detector and white blood cells found by stain blobs against SAM 3.1:
+
+  | Measure | Stain blobs | SAM 3.1 |
+  | --- | ---: | ---: |
+  | White blood cell F1 | 0.50 | 0.90 |
+  | White-cell error per field | +31 | +1.4 |
+  | Median density vs expert | 0.64× | 1.02× |
+  | Within 2× of the expert | 13/24 | 19/24 |
+  | Correlation with expert density | 0.79 | 0.93 |
+
+  Also: the Muse Spark audit caught 8/8 over-counts, and SAM 3.1 video counted 31 → 12 on the demo pan.
+- **Video:** the second half of the results scene is now "Where Meta's AI moves the number": four before → after rows, and a note that parasites come from our verifier (SAM 3.1 alone, F1 0.64).
+  - The narration says it plainly.
+  - The results scene is 2 s longer and the outro 2 s shorter; the total is still 3:00.
+  - The Tanzanian F1 of 0.48 moved to the "It is not" list.
+- **README:** a new section with an image (`docs/assets/meta_impact.png`) and the full table, plus a row in "At a glance".
+  - The Meta table gained a **Status** column: measured on test, measured on development data, verified live, or wired only.
+  - A wrong "about 6×" white-cell over-count was corrected to about 2.5×: 20.3 labelled per field, +31.
+- `scripts/narrate.py` now accepts a speed per line; the two results lines use 1.12×.
+
 ## Open issues
 
 1. **Parasite over-counting on some slides.** It is now flagged by the audit (step 7), not fixed. Remaining options:

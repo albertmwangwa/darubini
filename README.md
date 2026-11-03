@@ -21,7 +21,7 @@ Meta's **SAM 3.1** finds and tracks the cells, **Muse Spark** runs and audits th
 ![Muse Voice](https://img.shields.io/badge/Meta-Muse%20Voice%20Transcribe-1842b4)
 ![Kiswahili](https://img.shields.io/badge/reports-Kiswahili%20%7C%20English-683b9b)
 
-**[How it works](#how-it-works)** · **[Results](#results)** · **[Three ways to use it](#three-ways-to-use-it)** · **[Quick start](#quick-start)** · **[Demo video](docs/demo/)** · **[Model card](MODEL_CARD.md)**
+**[Where Meta's AI matters](#where-metas-ai-moves-the-number)** · **[How it works](#how-it-works)** · **[Results](#results)** · **[Three ways to use it](#three-ways-to-use-it)** · **[Quick start](#quick-start)** · **[Demo video](docs/demo/)** · **[Model card](MODEL_CARD.md)**
 
 <sub>*Darubini* is Kiswahili for a magnifying scope. Built for the Meta Global AI Developer Hackathon 2026, Indie track. What was built during the event: [docs/HACKATHON.md](docs/HACKATHON.md).</sub>
 
@@ -39,7 +39,32 @@ Meta's **SAM 3.1** finds and tracks the cells, **Muse Spark** runs and audits th
 | **The problem** | Malaria density is still counted by eye: parasites against 200 white blood cells, field after field. It is slow and tiring, and two microscopists can disagree. |
 | **What Darubini does** | Captures fields from a phone or a microscope camera, rejects blurry ones, detects parasites and white blood cells, applies the WHO counting rule, and has a Muse Spark agent audit the count and write the report. |
 | **How well, on patients it never saw** | Parasite F1 **0.80**; density within 2× of the expert on **19 of 24** slides (*r* = **0.93**); the audit caught **8 of 8** over-counted slides. |
+| **Where Meta's AI moves the number** | SAM 3.1's white blood cell count takes slides within 2× of the expert from **13 to 19 of 24**. The Muse Spark audit caught **8 of 8** over-counts. SAM 3.1 video counts each parasite once (**31 → 12** on a pan). Parasites themselves come from our own verifier. |
 | **What it is not** | Not a screen (uninfected slides show false positives), not a diagnosis, and weaker on Tanzanian UDOM smears (F1 0.48). |
+
+## Where Meta's AI moves the number
+
+<img src="docs/assets/meta_impact.png" alt="Where Meta's AI moves the number, on the same held-out test with the same parasite detector: white blood cell F1 0.50 to 0.90 with SAM 3.1; slides within 2x of the expert's density 13 of 24 to 19 of 24; over-counted slides caught by the Muse Spark audit 8 of 8; parasites on a panned clip counted once with SAM 3.1 video 31 to 12." width="100%">
+
+The plain answer, from the frozen NIH test (24 infected patients, 270 fields):
+- **Parasites are found by our own verifier network**, not by a Meta model. SAM 3.1's text prompt alone scored parasite F1 0.64. Adding SAM 3.1 box confirmation on top of the verifier added about 0.01 F1 on development data.
+- **What makes the density right is SAM 3.1 finding the white blood cells.** Density is 8,000 × parasites ÷ white blood cells, so an inflated white-cell count shrinks every density.
+
+The table compares the same parasite detector with white blood cells found two ways: by offline stain blobs, and by SAM 3.1's "cell" prompt.
+
+| Measure, held-out NIH test | Offline (stain blobs) | With SAM 3.1 | Change |
+| --- | ---: | ---: | --- |
+| White blood cell F1 | 0.50 | **0.90** | precision 0.35 → 0.87 |
+| White blood cell count error per field | +31.0 | **+1.4** | fields hold about 20 labelled white cells, so stain blobs report about 2.5× too many |
+| Median slide density, predicted ÷ expert | 0.64× | **1.02×** | from a third too low to on target |
+| Slides within ±25% of the expert | 6 / 24 | **11 / 24** | |
+| Slides within 2× of the expert | 13 / 24 | **19 / 24** | |
+| Correlation with expert density (log) | 0.79 | **0.93** | |
+| Parasite F1 | 0.76 | **0.80** | candidates inside a white cell are dropped, so better white-cell boxes keep more real parasites |
+
+The other two Meta models move different numbers:
+- **Muse Spark's audit** flagged all 8 test slides that were over-counted by 1.5× or more. It also flagged all 7 uninfected slides and 5 of the 16 slides counted correctly, so it is a review trigger, not a verdict.
+- **SAM 3.1 video tracking** counted 12 unique parasites on a 90-frame pan, where counting every frame gives 31. No object was counted twice across frames, checked against the expert labels ([tracking_demo.json](docs/demo/tracking_demo.json)).
 
 ## Why this matters
 
@@ -92,18 +117,16 @@ flowchart LR
 
 ## How it uses Meta AI
 
-| Meta model | Role in Darubini | Beyond a basic call | Called in |
-| --- | --- | --- | --- |
-| **SAM 3.1** `sam-3.1`, images | Finds white blood cells from the text concept "cell" (F1 0.90 on held-out NIH fields) | Prompt wording and tiling tuned by a cached, cost-guarded sweep | [`segmentation/sam.py`](src/darubini/segmentation/sam.py) |
-| **SAM 3.1** `sam-3.1`, box prompts | Two-stage detection: confirms each parasite candidate (detection mode `confirmed`) | Our detector proposes, and SAM 3.1 confirms 16 boxes per request with a confidence for each. Measured honestly on development data ([two_stage.md](docs/calibration/two_stage.md)) | [`segmentation/confirm.py`](src/darubini/segmentation/confirm.py) |
-| **SAM 3.1** `sam-3.1`, video | Counts each object once across a panning clip | Box prompts on keyframe detections, followed through the clip ([demo clip](docs/demo/tracking_demo.mp4)) | [`tracking.py`](src/darubini/tracking.py) |
-| **Muse Spark** `muse-spark-1.3` | Tool-calling counting agent; image-quality second reader; parasite audit; bilingual narrative | Runs a whole slide unattended under guardrails. It audits 20 sampled detections and flags slides whose count is probably inflated by platelets or debris | [`agent.py`](src/darubini/agent.py), [`audit.py`](src/darubini/audit.py), [`meta/reviewer.py`](src/darubini/meta/reviewer.py) |
-| **Muse Voice Transcribe** `muse-voice-transcribe-1.0` | Hands-free capture: "next field", "retake", "finish", "note …" | Any recorded audio is converted to 16 kHz WAV on the server, recognition is biased to the command vocabulary, and spoken notes travel into the report | [`voice.py`](src/darubini/voice.py), [`api/app.py`](src/darubini/api/app.py) |
-| **Muse Spark Open** (open weights) | Report narrative from a self-hosted or partner-hosted model, for clinics off the Meta API | Any OpenAI-compatible host (Baseten, Fireworks, Together, a local vLLM server) through the same client; invented numbers are rejected | [`cli.py`](src/darubini/cli.py) (`darubini analyse --narrate open`) |
+| Meta model | Role in Darubini | Beyond a basic call | Status | Called in |
+| --- | --- | --- | --- | --- |
+| **SAM 3.1** `sam-3.1`, images | Finds white blood cells from the text concept "cell" (F1 0.90 on held-out NIH fields) | Prompt wording and tiling tuned by a cached, cost-guarded sweep | **Measured on the held-out test:** white blood cell F1 0.50 → 0.90; slides within 2× 13 → 19 of 24 | [`segmentation/sam.py`](src/darubini/segmentation/sam.py) |
+| **SAM 3.1** `sam-3.1`, box prompts | Two-stage detection: confirms each parasite candidate (detection mode `confirmed`) | Our detector proposes, and SAM 3.1 confirms 16 boxes per request with a confidence for each. Measured honestly on development data ([two_stage.md](docs/calibration/two_stage.md)) | **Measured, small:** about +0.01 F1 over the verifier on development data; optional, off by default | [`segmentation/confirm.py`](src/darubini/segmentation/confirm.py) |
+| **SAM 3.1** `sam-3.1`, video | Counts each object once across a panning clip | Box prompts on keyframe detections, followed through the clip ([demo clip](docs/demo/tracking_demo.mp4)) | **Measured on a demo pan:** 31 → 12 parasites, 0 duplicates across frames; real phone video untested | [`tracking.py`](src/darubini/tracking.py) |
+| **Muse Spark** `muse-spark-1.3` | Tool-calling counting agent; image-quality second reader; parasite audit; bilingual narrative | Runs a whole slide unattended under guardrails. It audits 20 sampled detections and flags slides whose count is probably inflated by platelets or debris | **Measured on the held-out test:** ran 31 of 31 slides unattended; audit caught 8 of 8 over-counts | [`agent.py`](src/darubini/agent.py), [`audit.py`](src/darubini/audit.py), [`meta/reviewer.py`](src/darubini/meta/reviewer.py) |
+| **Muse Voice Transcribe** `muse-voice-transcribe-1.0` | Hands-free capture: "next field", "retake", "finish", "note …" | Any recorded audio is converted to 16 kHz WAV on the server, recognition is biased to the command vocabulary, and spoken notes travel into the report | **Verified live in English** (all four commands); Kiswahili unconfirmed | [`voice.py`](src/darubini/voice.py), [`api/app.py`](src/darubini/api/app.py) |
+| **Muse Spark Open** (open weights) | Report narrative from a self-hosted or partner-hosted model, for clinics off the Meta API | Any OpenAI-compatible host (Baseten, Fireworks, Together, a local vLLM server) through the same client; invented numbers are rejected | **Wired, not run live:** tested against a mock host only | [`cli.py`](src/darubini/cli.py) (`darubini analyse --narrate open`) |
 
-Two limits:
-- Kiswahili voice commands are matched, but Kiswahili is not on Muse Voice Transcribe's published language list, and they have not been confirmed with a native speaker.
-- Muse Spark Open has only been tested against a mock host, because no partner key was available.
+Kiswahili is not on Muse Voice Transcribe's published language list, and no partner key was available to run Muse Spark Open against a real host.
 
 All Meta Model API calls go through one adapter, [`src/darubini/meta/client.py`](src/darubini/meta/client.py). SAM replies are cached on disk, so an image and prompt are never billed twice.
 

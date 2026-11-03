@@ -5,7 +5,7 @@ The banner's field and detections are real (NIH development field TF44_UW16); th
 the results card come from docs/calibration/final_test.md.
 
     python scripts/demo_video.py --prepare   # once: the field image and detections
-    python scripts/readme_art.py             # docs/assets/{banner,architecture,results}.png
+    python scripts/readme_art.py             # docs/assets/{banner,architecture,results,meta_impact}.png
 """
 
 from __future__ import annotations
@@ -307,9 +307,40 @@ def results() -> Image.Image:
     return c
 
 
+def meta_impact() -> Image.Image:
+    """Where Meta's AI moves the number: before → after on the same held-out test."""
+    c = Image.new("RGBA", (1920, 820))
+    v.background(c, 4.0)
+    v.text(c, "SAME TEST SET  ·  SAME PARASITE DETECTOR", 80, 54, 22, 700, v.PRIMARY)
+    v.text(c, "Where Meta's AI moves the number", 80, 88, 44, 800, v.INK)
+    for i, (model, label, before, after) in enumerate(v.META_GAINS):
+        y = 180 + i * 132
+        v.card(c, 80, y, 1760, 112, 22)
+        v.pill(c, model, 112, y + 33, v.WHITE, v.PRIMARY, 20)
+        v.text(c, label, 420, y + 34, 30, 700, v.INK)
+        v.text(c, before, 1400, y + 24, 46, 800, v.MUTED, 1, "tr")
+        v.text(c, "→", 1470, y + 26, 42, 800, v.MUTED, 1, "tc")
+        v.text(c, after, 1800, y + 24, 46, 800, v.PRIMARY, 1, "tr")
+    v.pill(
+        c,
+        "Parasites themselves come from our own verifier network. SAM 3.1 alone scored parasite F1 0.64.",
+        80,
+        730,
+        v.MUTED,
+        v.SURFACE,
+        22,
+    )
+    return c
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, fn in (("banner", banner), ("architecture", architecture), ("results", results)):
+    for name, fn in (
+        ("banner", banner),
+        ("architecture", architecture),
+        ("results", results),
+        ("meta_impact", meta_impact),
+    ):
         im = fn().convert("RGB")
         im.save(OUT / f"{name}.png", optimize=True)
         print(OUT / f"{name}.png", im.size)

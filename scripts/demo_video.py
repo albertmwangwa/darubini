@@ -1185,6 +1185,12 @@ METRICS = [
     ("0.93", "Correlation", "with expert density (log)"),
     ("8/8", "Over-counts caught", "by the Muse Spark audit"),
 ]
+META_GAINS = [
+    ("SAM 3.1", "White blood cells found (F1)", "0.50", "0.90"),
+    ("SAM 3.1", "Slides within 2× of the expert's density", "13/24", "19/24"),
+    ("Muse Spark", "Over-counted slides caught by the audit", "–", "8/8"),
+    ("SAM 3.1 video", "Parasites on a panned clip, each counted once", "31", "12"),
+]
 BARS = [
     ("Stain threshold (baseline)", 0.30, MUTED),
     ("SAM 3.1 text prompt alone", 0.64, CHART_4),
@@ -1195,8 +1201,8 @@ BARS = [
 
 def s_results(c: Image.Image, t: float) -> None:
     background(c, t)
-    out = out_cubic(prog(t, 12.4, 0.6))
-    eyebrow(c, "TEST SET  ·  SCORED ONCE", 140, 130, t, 0.2)
+    out = out_cubic(prog(t, 10.6, 0.6))
+    eyebrow(c, "TEST SET  ·  SCORED ONCE", 140, 130, t, 0.2, alpha=1 - out)
     words(c, "Tested on patients it never saw.", 140, 175, 64, 800, INK, t, 0.4, alpha=1 - out)
     for i, (big, head, sub) in enumerate(METRICS):
         kk = prog(t, 1.4 + i * 2.4, 0.7)
@@ -1221,42 +1227,28 @@ def s_results(c: Image.Image, t: float) -> None:
             text(c, big, x + 34, y + 50, 96, 800, WHITE if hero else PRIMARY, a)
             text(c, head, x + 36, y + 200, 32, 800, WHITE if hero else INK, a)
             text(c, sub, x + 36, y + 248, 24, 400, PRIMARY_SOFT if hero else MUTED, a)
-    if t > 12.7:
-        tt = t - 12.7
-        words(c, "What each part adds", 140, 175, 60, 800, INK, tt, 0.1)
-        words(
-            c, "Parasite F1 on held-out NIH fields", 142, 255, 28, 400, MUTED, tt, 0.3, stagger=0.03
-        )
-        for i, (label, v, colour) in enumerate(BARS):
-            kk = out_cubic(prog(tt, 0.5 + i * 0.35, 0.9))
-            y = 350 + i * 130
-            text(c, label, 140, y + 18, 30, 600, INK, clamp(kk * 3))
-            put(c, rrect(1000, 56, 28, SURFACE), 760, y + 6, clamp(kk * 3))
-            wv = max(56, int(1000 * v * kk))
-            put(c, rrect(wv, 56, 28, colour), 760, y + 6, clamp(kk * 3))
-            text(
-                c,
-                f"{v * kk:.2f}",
-                760 + wv + 20,
-                y + 10,
-                36,
-                800,
-                INK if colour in (MUTED, CHART_4) else colour,
-                clamp(kk * 3),
-            )
-        if tt > 2.4:
-            kk = prog(tt, 2.4, 0.6)
-            pill(
-                c,
-                "Tanzanian UDOM smears: parasite F1 0.48. Harder, and reported honestly.",
-                140,
-                900,
-                WARN,
-                WARN_SOFT,
-                24,
-                clamp(kk * 2),
-                out_back(kk),
-            )
+    if t > 10.9:
+        tt = t - 10.9
+        eyebrow(c, "SAME TEST SET  ·  SAME PARASITE DETECTOR", 140, 130, tt, 0.0)
+        words(c, "Where Meta's AI moves the number", 140, 175, 60, 800, INK, tt, 0.1)
+        for i, (model, label, before, after) in enumerate(META_GAINS):
+            kk = prog(tt, 0.6 + i * 0.45, 0.7)
+            if kk <= 0:
+                continue
+            y = 290 + i * 132
+            card(c, 140, y, 1640, 112, 22, alpha=clamp(kk * 2), scale=0.97 + 0.03 * out_back(kk))
+            if kk > 0.5:
+                a = clamp((kk - 0.5) * 2)
+                pill(c, model, 172, y + 33, WHITE, PRIMARY, 20, a)
+                text(c, label, 470, y + 34, 30, 700, INK, a)
+                text(c, before, 1330, y + 24, 46, 800, MUTED, a, "tr")
+                text(c, "→", 1400, y + 26, 42, 800, MUTED, a, "tc")
+                g = out_cubic(prog(tt, 1.0 + i * 0.45, 0.6))
+                text(c, after, 1740, y + 24, 46, 800, PRIMARY, a * g, "tr")
+        if tt > 3.2:
+            kk = prog(tt, 3.2, 0.6)
+            pill(c, "Parasites themselves come from our own verifier network. SAM 3.1 alone scored parasite F1 0.64.", 140,
+                 830, MUTED, SURFACE, 22, clamp(kk * 2), out_back(kk))
 
 
 def s_honest(c: Image.Image, t: float) -> None:
@@ -1269,6 +1261,7 @@ def s_honest(c: Image.Image, t: float) -> None:
     ]
     right = [
         "Not a screen: uninfected slides show false positives",
+        "Not yet strong on Tanzanian smears (F1 0.48)",
         "Not a diagnosis, and never treatment advice",
     ]
     k = out_cubic(prog(t, 0.6, 0.7))
@@ -1488,10 +1481,8 @@ def s_outro(c: Image.Image, t: float) -> None:
         a,
         "tc",
     )
-    if t > 9.6:
-        c.alpha_composite(
-            Image.new("RGBA", (W, H), (0, 0, 0, int(255 * out_cubic(prog(t, 9.6, 1.3)))))
-        )
+    if t > 7.7:
+        c.alpha_composite(Image.new("RGBA", (W, H), (0, 0, 0, int(255 * out_cubic(prog(t, 7.7, 1.2))))))
 
 
 # Durations sit on the music's 2-second bar grid; the first downbeat is at 3.02 s.
@@ -1504,10 +1495,10 @@ SCENES = [
     ("track", s_track, 12.0, "light"),
     ("train", s_train, 20.0, "light"),
     ("agent", s_agent, 18.0, "light"),
-    ("results", s_results, 18.0, "light"),
+    ("results", s_results, 20.0, "light"),
     ("honest", s_honest, 8.0, "light"),
     ("future", s_future, 12.0, "light"),
-    ("outro", s_outro, 10.98, "brand"),
+    ("outro", s_outro, 8.98, "brand"),
 ]
 STARTS = dict(
     zip(
@@ -1610,7 +1601,8 @@ def sfx_plan() -> list[tuple[float, str, float]]:
         (s["agent"] + 10.8, "impactBell_heavy_000.ogg", 0.45),
         *[(s["results"] + 1.4 + i * 2.4, "drop_002.ogg", 0.5) for i in range(4)],
         (s["results"] + 3.8, "impactBell_heavy_003.ogg", 0.35),
-        *[(s["results"] + 13.2 + i * 0.35, "card-slide-1.ogg", 0.4) for i in range(4)],
+        *[(s["results"] + 11.5 + i * 0.45, "card-slide-1.ogg", 0.4) for i in range(4)],
+        (s["results"] + 10.9 + 1.0 + 2 * 0.45, "impactBell_heavy_003.ogg", 0.35),
         (s["honest"] + 1.2, "drop_001.ogg", 0.45),
         (s["honest"] + 2.6, "bong_001.ogg", 0.4),
         *[(s["future"] + 1.0 + i * 0.9, "card-slide-1.ogg", 0.4) for i in range(4)],
@@ -1755,8 +1747,10 @@ SCREEN = {
     "the verifier network (16×16 crop + 8 features → 776 → 64 → 1) training over 40 epochs as validation F1 rises "
     "0.29 → 0.81 and the threshold settles at 0.75; five best-practice checks; best results 0.81, 0.95, 0.80",
     "agent": "Muse Spark tool-call timeline; Kiswahili report typing; TF65: 16,383 vs 16,142 /µL",
-    "results": "0.80 F1, 19/24 within 2×, r 0.93, 8/8 over-counts caught; F1 ablation bars; UDOM 0.48",
-    "honest": "It is / it is not",
+    "results": "0.80 F1, 19/24 within 2×, r 0.93, 8/8 over-counts caught; then **where Meta's AI moves the number**: "
+    "SAM 3.1 WBC F1 0.50 → 0.90, slides within 2× 13/24 → 19/24, Muse Spark audit 8/8, SAM 3.1 video 31 → 12; "
+    "note that parasites come from our own verifier (SAM 3.1 alone 0.64)",
+    "honest": "It is / it is not (not a screen; not yet strong on Tanzanian smears, F1 0.48; not a diagnosis)",
     "future": "Roadmap: TB smears, schistosomiasis, sleeping sickness, helminths; a simulated TB culture plate growing over 42 days",
     "outro": "Darubini; tagline; repository; credits",
 }

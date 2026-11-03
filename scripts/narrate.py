@@ -34,7 +34,10 @@ def main() -> int:
     durations = {}
     for i, line in enumerate(spec["lines"]):
         chunks = [
-            audio for _, _, audio in pipe(line["text"], voice=spec["voice"], speed=spec["speed"])
+            audio
+            for _, _, audio in pipe(
+                line["text"], voice=spec["voice"], speed=line.get("speed", spec["speed"])
+            )
         ]
         audio = np.concatenate([np.asarray(a, dtype=np.float32) for a in chunks])
         name = f"{i:02d}_{line['scene']}.wav"
