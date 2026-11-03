@@ -390,6 +390,16 @@ The user asked to complete the implementation plan. Three Meta-tooling items wer
 - **Muse Spark Open (open weights).** `OPEN_WEIGHTS_BASE_URL` / `OPEN_WEIGHTS_API_KEY` / `OPEN_WEIGHTS_MODEL` (default `meta-models/muse-spark-open`) and `darubini analyse --narrate open|muse`. The narrative is dropped if it quotes a number the count did not produce. **Not run live: no Baseten, Fireworks or Modal key.**
 - Checks: 218 Python tests (97% coverage), ruff, mypy strict; Android unit tests and debug build.
 
+### 19. Demo video from the train/test results (3 Nov)
+
+- **Decision (user):** with no live lab session possible, the demo video uses the results from our own train/test split, in the style of a SaaS motion-graphics explainer. The reference reel, solair.motion's explainer for Ava AI, could not be viewed: Instagram returned only its caption. The genre was matched rather than the exact frames.
+- **`scripts/demo_video.py`:**
+  - A small PIL motion-graphics engine: eased spring animations, cached anti-aliased cards and shadows, kinetic type, ticking counters, zoom-through transitions.
+  - 10 scenes in 1:48, at 1920 × 1080 and 30 fps, with a synthesised music bed and whooshes.
+  - Every figure is real. The sources are listed in [demo/README.md](demo/README.md).
+- **Output:** `datasets/processed/demo/darubini_demo.mp4`, which is not committed.
+- **The APK for a phone:** `android/app/build/outputs/apk/debug/app-debug.apk`. It was built 2 Nov and includes voice.
+
 ## Open issues
 
 1. **Parasite over-counting on some slides.** It is now flagged by the audit (step 7), not fixed. Remaining options:
