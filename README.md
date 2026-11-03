@@ -350,7 +350,6 @@ The day-by-day hackathon plan is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEME
 - [x] Muse Spark tool-calling agent with a parasite audit; Muse Voice Transcribe commands
 - [x] Web app with a live microscope camera; native Android app
 - [x] Final evaluation on the frozen test sets (scored once, 2 Nov); 3-minute demo video
-- [ ] Live session on a real microscope in Dar es Salaam, beside a microscopist's count
 - [ ] Better Tanzanian accuracy; a negative/positive screen that copes with false positives
 - [ ] **More of Africa's microscopy:**
   - tuberculosis sputum smears (Ziehl–Neelsen)
