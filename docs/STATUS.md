@@ -490,6 +490,21 @@ The user asked to complete the implementation plan. Three Meta-tooling items wer
   - The README conflict kept the user's removal of the "live demo on a real microscope" roadmap item.
   - `main` was fast-forwarded to the branch at `06d63ed`, with no force push.
 
+### 24. README improved (5 Nov)
+
+- **See it work:** a real SAM 3.1 tracking animation (`docs/assets/tracking.gif`, made from `tracking_demo.mp4`) and the three app screenshots, moved to the top.
+- **Corrections:**
+  - The headline no longer claims "in minutes", which was never measured. "A few seconds per field" is measured.
+  - Quick start now uses the shipped `verified` model instead of `baseline`, and gives Windows paths (`.venv\Scripts`).
+  - The demo section shows the video's poster instead of an empty link.
+- **Additions:**
+  - a detection-modes table (what each mode needs and how well it does)
+  - an API table
+  - "Does it have to be a phone?"
+- **Shorter:**
+  - The Meta story is stated once, plus a link from "At a glance".
+  - Datasets, modules, engineering and layout are now collapsible.
+
 ## Open issues
 
 1. **Parasite over-counting on some slides.** It is now flagged by the audit (step 7), not fixed. Remaining options:
